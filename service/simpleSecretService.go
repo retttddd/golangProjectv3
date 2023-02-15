@@ -8,9 +8,11 @@ type SimpleSecretService struct {
 
 func (ss *SimpleSecretService) ReadSecret(key string) (string, error) {
 	return ss.storage.Read(key)
-
 }
-func New(st storage.Storage) SecretService {
+func (as *SimpleSecretService) WriteSecret(key, value string) {
+	as.storage.Write(key, value)
+}
+func New(st storage.Storage) *SimpleSecretService {
 	return &SimpleSecretService{
 		storage: st,
 	}
