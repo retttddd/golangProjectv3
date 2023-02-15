@@ -1,0 +1,1 @@
+fsStorage works directly with file storage.
