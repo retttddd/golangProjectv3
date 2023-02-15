@@ -6,5 +6,6 @@ write: User passes {write command, key, value} -
 Supports: multiple local storages and any other form of saving data
           can be added http server.
 
-
+FLOW DIAGRAM
+https://docs.google.com/drawings/d/1tWcCpbe8mgTYYUC4GNBO3ofqPE5wAEsUSBzxqz_X_jQ/edit?usp=sharing
 
