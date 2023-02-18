@@ -8,8 +8,8 @@ import (
 
 func main() {
 	srv := service.New(storage.New())
-	value, _ := srv.ReadSecret("qweqweqwq")
+	value, _ := srv.ReadSecret("thisis32bitlongpassphraseimusing")
 	fmt.Print(value)
-	srv.WriteSecret("weqweqeqwe", "qweqweqwe")
+	srv.WriteSecret("thisis32bitlongpassphraseimusing", "secret value")
 
 }
