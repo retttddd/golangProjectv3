@@ -1,6 +1,6 @@
 package service
 
 type SecretService interface {
-	ReadSecret(key string) (string, error)
-	WriteSecret(key, value string) error
+	ReadSecret(key []byte) (string, error)
+	WriteSecret(key []byte, value string)
 }

@@ -1,6 +1,6 @@
 package storage
 
 type Storage interface {
-	Read(key string) (string, error)
-	Write(key, value string)
+	Read(key []byte) (string, error)
+	Write(key []byte, value string)
 }

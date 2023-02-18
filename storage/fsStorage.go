@@ -6,10 +6,10 @@ type FsStorage struct {
 	path string
 }
 
-func (st FsStorage) Read(key string) (string, error) {
+func (st FsStorage) Read(key []byte) (string, error) {
 	return "got it", nil
 }
-func (st FsStorage) Write(key, value string) {
+func (st FsStorage) Write(key []byte, value string) {
 	fmt.Print(value)
 }
 
