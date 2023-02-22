@@ -1,6 +1,7 @@
-package service
+package de_encoding
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -15,16 +16,24 @@ func GenerateRandomBytes(n int) ([]byte, error) {
 	return b, nil
 }
 
+func shaEncrypt(fileNameFunc string) []byte {
+	h := sha256.New()
+	h.Write([]byte(fileNameFunc))
+	encryptedKeyWord := h.Sum(nil)
+	return encryptedKeyWord
+}
+
 func CheckFile(name string) []byte {
 	randomKey, _ := GenerateRandomBytes(32)
-	data, err := ioutil.ReadFile(name)
+	fileName := shaEncrypt(name)
+	data, err := ioutil.ReadFile(string(fileName))
 	if err != nil {
 		fmt.Println(err)
 	}
 	if data != nil {
 		return data
 	} else {
-		err := ioutil.WriteFile(name, randomKey, 0777)
+		err := ioutil.WriteFile(string(fileName), randomKey, 0777)
 
 		if err != nil {
 			fmt.Println(err)
