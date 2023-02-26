@@ -5,6 +5,8 @@ import (
 	"awesomeProject3/storage"
 )
 
+a := "daadadsd"
+
 type SimpleSecretService struct {
 	storage storage.Storage
 	encoder de_encoding.Encoder
