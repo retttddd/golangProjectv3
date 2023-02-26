@@ -10,7 +10,7 @@ func (st FsStorage) Read(key string) (string, error) {
 	return "got it", nil
 }
 func (st FsStorage) Write(key string, value string) {
-	fmt.Print(value)
+	fmt.Print(value, key)
 }
 
 func New() Storage {
