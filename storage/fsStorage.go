@@ -11,7 +11,7 @@ type FsStorage struct {
 	path string
 }
 type MyStruct struct {
-	StructData map[string]string
+	DataPiece map[string]string
 }
 
 func (st FsStorage) Read(key string) (string, error) {
@@ -35,7 +35,7 @@ func (st FsStorage) Write(key string, value string) {
 	json.Unmarshal(file, &data)
 
 	newStruct := &MyStruct{
-		StructData: map[string]string{key: value},
+		DataPiece: map[string]string{key: value},
 	}
 
 	data = append(data, *newStruct)
