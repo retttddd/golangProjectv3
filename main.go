@@ -9,7 +9,7 @@ import (
 func main() {
 	passWord := "hello"
 	srv := service.New(storage.New(), de_encoding.NewAESEncoder(de_encoding.PassToSecretKey(passWord)))
-	srv.WriteSecret("key4", "123456789121345678")
+	srv.WriteSecret("key10", "123356389125345678")
 	//value, _ := srv.ReadSecret("key1")
 
 }

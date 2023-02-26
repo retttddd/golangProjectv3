@@ -4,9 +4,9 @@ import (
 	"crypto/sha256"
 )
 
-func PassToSecretKey(string2 string) []byte {
+func PassToSecretKey(pass string) []byte {
 	h := sha256.New()
-	h.Write([]byte(string2))
+	h.Write([]byte(pass))
 	encryptedKeyWord := (h.Sum(nil))
 	return encryptedKeyWord[:32]
 
