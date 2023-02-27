@@ -7,18 +7,32 @@ import (
 	"os"
 )
 
+const filename = "test.json"
+
 type FsStorage struct {
 	path string
 }
 type MyStruct struct {
-	DataPiece map[string]string
+	Key   string
+	Value string
 }
 
 func (st FsStorage) Read(key string) (string, error) {
-	return "got it", nil
+	allDataFromJson := []MyStruct{}
+	file, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Println("action failed: ", err)
+	}
+	json.Unmarshal(file, &allDataFromJson)
+	for _, v := range allDataFromJson {
+		if v.Key == key {
+			return v.Value, nil
+		}
+	}
+	return "", nil
 }
 func (st FsStorage) Write(key string, value string) {
-	filename := "test.json"
+	//filename := "test.json"
 	err := checkFile(filename)
 	if err != nil {
 		log.Println("action failed: ", err)
@@ -31,16 +45,14 @@ func (st FsStorage) Write(key string, value string) {
 
 	data := []MyStruct{}
 
-	// Here the magic happens!
 	json.Unmarshal(file, &data)
 
 	newStruct := &MyStruct{
-		DataPiece: map[string]string{key: value},
+		Key:   key,
+		Value: value,
 	}
 
 	data = append(data, *newStruct)
-
-	// Preparing the data to be marshalled and written.
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		log.Println("action failed: ", err)
