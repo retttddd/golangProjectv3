@@ -24,6 +24,9 @@ func (st FsStorage) Read(key string) (string, error) {
 		log.Println("action failed: ", err)
 	}
 	json.Unmarshal(file, &allDataFromJson)
+	if err != nil {
+		log.Println("action failed: ", err)
+	}
 	for _, v := range allDataFromJson {
 		if v.Key == key {
 			return v.Value, nil
@@ -32,7 +35,6 @@ func (st FsStorage) Read(key string) (string, error) {
 	return "", nil
 }
 func (st FsStorage) Write(key string, value string) {
-	//filename := "test.json"
 	err := checkFile(filename)
 	if err != nil {
 		log.Println("action failed: ", err)
@@ -62,23 +64,6 @@ func (st FsStorage) Write(key string, value string) {
 	if err != nil {
 		log.Println("action failed: ", err)
 	}
-	//checkFile("test.json")
-	//var gotData = map[string]string{key: value}
-	//data, err := ioutil.ReadFile("test.json")
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return
-	//}
-	//var slice []map[string]string
-	//err = json.Unmarshal(data, &slice)
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return
-	//}
-	//slice = append(slice, gotData)
-	//a, _ := json.Marshal(slice)
-	//_ = ioutil.WriteFile("test.json", a, 0644)
-
 }
 
 func New() Storage {
