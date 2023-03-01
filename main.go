@@ -1,6 +1,11 @@
 package main
 
+import (
+	"awesomeProject3/cli"
+)
+
 func main() {
+
 	//passWord := "hello2"
 	//srv := service.New(storage.New(), de_encoding.NewAESEncoder(de_encoding.PassToSecretKey(passWord)))
 	////srv.WriteSecret("key18", "ThatsValue18") //hello
@@ -10,6 +15,6 @@ func main() {
 	////srv.WriteSecret("key22", "THatsValue22") //hello2
 	//value, _ := srv.ReadSecret("key22")
 	//fmt.Print(value)
-	operator.Execute()
+	cli.Execute()
 
 }
