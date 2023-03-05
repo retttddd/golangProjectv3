@@ -2,6 +2,7 @@ package storage
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -48,6 +49,12 @@ func (st FsStorage) Write(key string, value string) {
 	data := []MyStruct{}
 
 	json.Unmarshal(file, &data)
+	for _, v := range data {
+		if v.Key == key {
+			fmt.Println("such already exists, think about another one")
+			return
+		}
+	}
 
 	newStruct := &MyStruct{
 		Key:   key,
