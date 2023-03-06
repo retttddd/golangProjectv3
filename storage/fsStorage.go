@@ -75,7 +75,14 @@ func New() Storage {
 func checkFile(filename string) error {
 	_, err := os.Stat(filename)
 	if os.IsNotExist(err) {
-		_, err := os.Create(filename)
+		f, err := os.Create(filename)
+		if err != nil {
+		    return err
+		}
+		
+		defer f.Close()
+		
+		return nil
 		if err != nil {
 			return err
 		}
