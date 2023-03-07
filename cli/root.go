@@ -17,8 +17,8 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-	rootCmd.AddCommand(put)
 	rootCmd.AddCommand(get)
+	rootCmd.AddCommand(set)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "'%s'", err)
 		os.Exit(1)

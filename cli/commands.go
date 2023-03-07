@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var put = &cobra.Command{
-	Use:   "put",
+var set = &cobra.Command{
+	Use:   "set",
 	Short: "writes data in",
 	Long:  "give 3 parameters: key value password",
 	Args:  cobra.ExactArgs(3),

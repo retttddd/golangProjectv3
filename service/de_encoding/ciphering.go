@@ -5,7 +5,6 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 	"io"
 )
 
@@ -25,18 +24,18 @@ func (en AESEncoder) Decrypt(ct string) string {
 	checkError(err)
 	gcm, err := cipher.NewGCM(c)
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 	}
 
 	nonceSize := gcm.NonceSize()
 	if len(ciphertext) < nonceSize {
-		fmt.Println(err)
+		panic(err)
 	}
 
 	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
 	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 	}
 
 	return string(plaintext[:])
@@ -47,12 +46,13 @@ func (en AESEncoder) Encrypt(plaintext string) string {
 	checkError(err)
 	gcm, err := cipher.NewGCM(c)
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
+
 	}
 	nonce := make([]byte, gcm.NonceSize())
 
 	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
-		fmt.Println(err)
+		panic(err)
 	}
 	return hex.EncodeToString(gcm.Seal(nonce, nonce, []byte(plaintext), nil))
 }

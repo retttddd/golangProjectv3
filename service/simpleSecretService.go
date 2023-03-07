@@ -5,8 +5,6 @@ import (
 	"awesomeProject3/storage"
 )
 
-const trash = "1234567890123456"
-
 type SimpleSecretService struct {
 	storage storage.Storage
 	encoder de_encoding.Encoder
