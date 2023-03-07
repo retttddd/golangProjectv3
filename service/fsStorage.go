@@ -1,6 +1,7 @@
-package storage
+package service
 
 import (
+	"awesomeProject3/storage"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -9,7 +10,7 @@ import (
 
 const filename = "test.json"
 
-type FsStorage struct {
+type fsStorage struct {
 	path string
 }
 type MyStruct struct {
@@ -17,7 +18,7 @@ type MyStruct struct {
 	Value string
 }
 
-func (st FsStorage) Read(key string) (string, error) {
+func (st fsStorage) Read(key string) (string, error) {
 	allDataFromJson := []MyStruct{}
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -34,7 +35,7 @@ func (st FsStorage) Read(key string) (string, error) {
 	}
 	return "", nil
 }
-func (st FsStorage) Write(key string, value string) {
+func (st fsStorage) Write(key string, value string) {
 	err := checkFile(filename)
 	if err != nil {
 		log.Println("action failed: ", err)
@@ -66,8 +67,8 @@ func (st FsStorage) Write(key string, value string) {
 	}
 }
 
-func New() Storage {
-	return FsStorage{
+func NewFsStorage() storage.Storage {
+	return fsStorage{
 		path: "p",
 	}
 }
@@ -77,11 +78,11 @@ func checkFile(filename string) error {
 	if os.IsNotExist(err) {
 		f, err := os.Create(filename)
 		if err != nil {
-		    return err
+			return err
 		}
-		
+
 		defer f.Close()
-		
+
 		return nil
 		if err != nil {
 			return err
