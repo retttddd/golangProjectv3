@@ -1,14 +1,17 @@
 package cli
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
 )
 
+var (
+	Keys   string
+	Vals   string
+	Pwords string
+)
+
 var rootCmd = &cobra.Command{
-	Use:   "stringer",
+	Use:   "secret",
 	Short: "operator stores and provides ur files secretly",
 	Long:  `q`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -16,11 +19,13 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-func Execute() {
+func Execute() error {
 	rootCmd.AddCommand(get)
 	rootCmd.AddCommand(set)
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "'%s'", err)
-		os.Exit(1)
-	}
+	set.Flags().StringVarP(&Keys, "key", "k", "", "key you use to identify data")
+	set.Flags().StringVarP(&Vals, "value", "v", "", "data you pass ")
+	set.Flags().StringVarP(&Pwords, "cipher-key", "p", "", "cipher-key you use to make your data secret ")
+	get.Flags().StringVarP(&Keys, "key", "k", "", "key you use to identify data")
+	get.Flags().StringVarP(&Pwords, "cipher-key", "p", "", "cipher-key you use to make your data secret ")
+	return rootCmd.Execute()
 }

@@ -1,56 +1,53 @@
-package service
+package storage
 
 import (
-	"awesomeProject3/storage"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
-	"log"
 	"os"
 )
-
-const filename = "test.json"
 
 type fsStorage struct {
 	path string
 }
-type MyStruct struct {
+type myStruct struct {
 	Key   string
 	Value string
 }
 
 func (st fsStorage) Read(key string) (string, error) {
-	allDataFromJson := []MyStruct{}
-	file, err := ioutil.ReadFile(filename)
+	allDataFromJson := []myStruct{}
+	file, err := ioutil.ReadFile(st.path)
 	if err != nil {
-		log.Println("action failed: ", err)
+		return "", err
 	}
 	json.Unmarshal(file, &allDataFromJson)
 	if err != nil {
-		log.Println("action failed: ", err)
+		return "", err
 	}
 	for _, v := range allDataFromJson {
 		if v.Key == key {
 			return v.Value, nil
 		}
 	}
-	return "", nil
+	return "", errors.New("item was not found")
 }
-func (st fsStorage) Write(key string, value string) {
-	err := checkFile(filename)
+func (st fsStorage) Write(key string, value string) error {
+	err := checkFile(st.path)
 	if err != nil {
-		log.Println("action failed: ", err)
+		return err
 	}
 
-	file, err := ioutil.ReadFile(filename)
+	file, err := ioutil.ReadFile(st.path)
 	if err != nil {
-		log.Println("action failed: ", err)
+		return err
 	}
 
-	data := []MyStruct{}
+	data := []myStruct{}
 
 	json.Unmarshal(file, &data)
 
-	newStruct := &MyStruct{
+	newStruct := &myStruct{
 		Key:   key,
 		Value: value,
 	}
@@ -58,18 +55,19 @@ func (st fsStorage) Write(key string, value string) {
 	data = append(data, *newStruct)
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
-		log.Println("action failed: ", err)
+		return err
 	}
 
-	err = ioutil.WriteFile(filename, dataBytes, 0644)
+	err = ioutil.WriteFile(st.path, dataBytes, 0644)
 	if err != nil {
-		log.Println("action failed: ", err)
+		return err
 	}
+	return nil
 }
 
-func NewFsStorage() storage.Storage {
+func NewFsStorage() fsStorage {
 	return fsStorage{
-		path: "p",
+		path: "test.json",
 	}
 }
 
@@ -80,13 +78,7 @@ func checkFile(filename string) error {
 		if err != nil {
 			return err
 		}
-
 		defer f.Close()
-
-		return nil
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }

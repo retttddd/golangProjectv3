@@ -1,4 +1,4 @@
-package de_encoding
+package ciphering
 
 import (
 	"crypto/sha256"
@@ -12,14 +12,14 @@ func PassToSecretKey(pass string) []byte {
 	h.Write([]byte(pass))
 
 	encryptedKeyWord := h.Sum(nil)
-	if h.Size() < 32 {
-		dif := 32 - h.Size()
-		return CreateArray(dif, encryptedKeyWord)
+	if h.Size() < keySize {
+		dif := keySize - h.Size()
+		return createArray(dif, encryptedKeyWord)
 	}
 	return encryptedKeyWord[:keySize]
 
 }
-func CreateArray(diff int, arr []byte) []byte {
+func createArray(diff int, arr []byte) []byte {
 	bigSlice := make([]byte, diff)
 	for j := 0; j < len(bigSlice); j++ {
 		bigSlice[j] = 65
