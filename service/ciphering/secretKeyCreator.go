@@ -13,17 +13,8 @@ func PassToSecretKey(pass string) []byte {
 
 	encryptedKeyWord := h.Sum(nil)
 	if h.Size() < keySize {
-		dif := keySize - h.Size()
-		return createArray(dif, encryptedKeyWord)
+		panic("ALARM")
 	}
 	return encryptedKeyWord[:keySize]
 
-}
-func createArray(diff int, arr []byte) []byte {
-	bigSlice := make([]byte, diff)
-	for j := 0; j < len(bigSlice); j++ {
-		bigSlice[j] = 65
-	}
-	arr = append(arr, bigSlice...)
-	return arr
 }

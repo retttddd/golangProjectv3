@@ -11,23 +11,31 @@ type SimpleSecretService struct {
 }
 
 func (ss *SimpleSecretService) ReadSecret(key string, password string) (string, error) {
-	encryptedVal, err := ss.storage.Read(key)
+	codedKey, err := ss.encoder.Encrypt(key, ciphering.PassToSecretKey(password), false) //encode key without random aspect
 	if err != nil {
 		return "", err
 	}
-	x, err2 := ss.encoder.Decrypt(encryptedVal, ciphering.PassToSecretKey(password))
-	if err2 != nil {
-		return "", err2
+	encryptedVal, err := ss.storage.Read(codedKey)
+	if err != nil {
+		return "", err
 	}
-	return string(x), nil
+	decryptedVal, err := ss.encoder.Decrypt(encryptedVal, ciphering.PassToSecretKey(password), true)
+	if err != nil {
+		return "", err
+	}
+	return string(decryptedVal), nil
 }
 
 func (ss *SimpleSecretService) WriteSecret(key string, value string, password string) error {
-	x, err := ss.encoder.Encrypt(value, ciphering.PassToSecretKey(password))
+	secretData, err := ss.encoder.Encrypt(value, ciphering.PassToSecretKey(password), true) //encode value(standart way)
 	if err != nil {
 		return err
 	}
-	return ss.storage.Write(key, x)
+	codedKey, err := ss.encoder.Encrypt(key, ciphering.PassToSecretKey(password), false) //encode key without random aspect
+	if err != nil {
+		return err
+	}
+	return ss.storage.Write(codedKey, secretData)
 }
 
 func New(st storage.Storage, en ciphering.Encoder) SimpleSecretService {

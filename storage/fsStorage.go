@@ -10,28 +10,21 @@ import (
 type fsStorage struct {
 	path string
 }
-type myStruct struct {
-	Key   string
-	Value string
-}
 
 func (st fsStorage) Read(key string) (string, error) {
-	allDataFromJson := []myStruct{}
 	file, err := ioutil.ReadFile(st.path)
 	if err != nil {
 		return "", err
 	}
-	json.Unmarshal(file, &allDataFromJson)
-	if err != nil {
-		return "", err
-	}
-	for _, v := range allDataFromJson {
-		if v.Key == key {
-			return v.Value, nil
-		}
+	data := make(map[string]string)
+	json.Unmarshal(file, &data)
+	val, ok := data[key]
+	if ok {
+		return val, nil
 	}
 	return "", errors.New("item was not found")
 }
+
 func (st fsStorage) Write(key string, value string) error {
 	err := checkFile(st.path)
 	if err != nil {
@@ -42,17 +35,9 @@ func (st fsStorage) Write(key string, value string) error {
 	if err != nil {
 		return err
 	}
-
-	data := []myStruct{}
-
+	data := make(map[string]string)
 	json.Unmarshal(file, &data)
-
-	newStruct := &myStruct{
-		Key:   key,
-		Value: value,
-	}
-
-	data = append(data, *newStruct)
+	data[key] = value
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -79,6 +64,8 @@ func checkFile(filename string) error {
 			return err
 		}
 		defer f.Close()
+		return nil
 	}
-	return nil
-}
+
+	return err
+} /////error handling

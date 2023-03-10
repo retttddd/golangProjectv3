@@ -23,7 +23,7 @@ var set = &cobra.Command{
 	Use:   "set",
 	Short: "writes data in",
 	Long:  "give 3 parameters: key value password",
-	//Args:  cobra.ExactArgs(3),
+
 	Run: func(cmd *cobra.Command, args []string) {
 		keys, err := cmd.Flags().GetString("key")
 		if err != nil {
@@ -55,7 +55,6 @@ var get = &cobra.Command{
 	Use:   "get",
 	Short: "reads data",
 	Long:  "give 2 parameters: key password",
-	//Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		keys, err := cmd.Flags().GetString("key")
 		if err != nil {
