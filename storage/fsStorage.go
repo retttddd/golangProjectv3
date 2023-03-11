@@ -18,6 +18,10 @@ func (st fsStorage) Read(key string) (string, error) {
 	}
 	data := make(map[string]string)
 	json.Unmarshal(file, &data)
+	if err != nil {
+		return "", err
+	}
+
 	val, ok := data[key]
 	if ok {
 		return val, nil
@@ -37,6 +41,10 @@ func (st fsStorage) Write(key string, value string) error {
 	}
 	data := make(map[string]string)
 	json.Unmarshal(file, &data)
+	if err != nil {
+		return err
+	}
+
 	data[key] = value
 	dataBytes, err := json.Marshal(data)
 	if err != nil {

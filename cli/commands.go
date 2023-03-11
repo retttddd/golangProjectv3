@@ -8,46 +8,31 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type setData struct {
-	Keys  string
-	Vals  string
-	Pword string
-}
-
-type getData struct {
-	Keys  string
-	Pword string
-}
-
 var set = &cobra.Command{
 	Use:   "set",
 	Short: "writes data in",
 	Long:  "give 3 parameters: key value password",
 
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		keys, err := cmd.Flags().GetString("key")
 		if err != nil {
-			fmt.Println(err)
+			return err
 		}
 		value, err := cmd.Flags().GetString("value")
 		if err != nil {
-			fmt.Println(err)
+			return err
 		}
-		pwords, err := cmd.Flags().GetString("cipher-key")
+		cipherKey, err := cmd.Flags().GetString("cipher-key")
 		if err != nil {
-			fmt.Println(err)
+			return err
 		}
-		p := new(setData)
-		p.Keys = keys
-		p.Vals = value
-		p.Pword = pwords
 		srv := service.New(storage.NewFsStorage(), ciphering.NewAESEncoder())
-		err1 := srv.WriteSecret(keys, value, pwords)
-		if err1 != nil {
-			fmt.Println(err1)
-			return
+		if err := srv.WriteSecret(keys, value, cipherKey); err != nil {
+			return err
 		}
+
 		fmt.Println("done")
+		return nil
 	},
 }
 
@@ -55,24 +40,22 @@ var get = &cobra.Command{
 	Use:   "get",
 	Short: "reads data",
 	Long:  "give 2 parameters: key password",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		keys, err := cmd.Flags().GetString("key")
 		if err != nil {
-			fmt.Println(err)
+			return err
 		}
-		pwords, err := cmd.Flags().GetString("cipher-key")
+		cipherKey, err := cmd.Flags().GetString("cipher-key")
 		if err != nil {
-			fmt.Println(err)
+			return err
 		}
-		p := new(getData)
-		p.Keys = keys
-		p.Pword = pwords
 		srv := service.New(storage.NewFsStorage(), ciphering.NewAESEncoder())
-		value, err := srv.ReadSecret(keys, pwords)
+		value, err := srv.ReadSecret(keys, cipherKey)
 		if err != nil {
 			fmt.Println(err)
-			return
+			return err
 		}
 		fmt.Println("decoded data:\n", value)
+		return nil
 	},
 }

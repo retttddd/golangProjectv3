@@ -13,7 +13,7 @@ func PassToSecretKey(pass string) []byte {
 
 	encryptedKeyWord := h.Sum(nil)
 	if h.Size() < keySize {
-		panic("ALARM")
+		panic("key size is incorrect ")
 	}
 	return encryptedKeyWord[:keySize]
 
