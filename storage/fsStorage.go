@@ -10,13 +10,16 @@ import (
 type fsStorage struct {
 	path string
 }
+type dataBox struct {
+	Value string `json:"value"`
+}
 
 func (st fsStorage) Read(key string) (string, error) {
 	file, err := ioutil.ReadFile(st.path)
 	if err != nil {
 		return "", err
 	}
-	data := make(map[string]string)
+	data := make(map[string]dataBox)
 	json.Unmarshal(file, &data)
 	if err != nil {
 		return "", err
@@ -24,7 +27,7 @@ func (st fsStorage) Read(key string) (string, error) {
 
 	val, ok := data[key]
 	if ok {
-		return val, nil
+		return val.Value, nil
 	}
 	return "", errors.New("item was not found")
 }
@@ -39,13 +42,13 @@ func (st fsStorage) Write(key string, value string) error {
 	if err != nil {
 		return err
 	}
-	data := make(map[string]string)
+	data := make(map[string]dataBox)
 	json.Unmarshal(file, &data)
 	if err != nil {
 		return err
 	}
 
-	data[key] = value
+	data[key] = dataBox{Value: value}
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		return err
