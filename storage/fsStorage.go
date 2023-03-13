@@ -76,4 +76,4 @@ func checkFile(filename string) error {
 	}
 
 	return err
-} /////error handling
+}
