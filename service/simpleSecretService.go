@@ -1,37 +1,47 @@
 package service
 
 import (
-	"awesomeProject3/service/de_encoding"
+	"awesomeProject3/service/ciphering"
 	"awesomeProject3/storage"
 )
 
 type SimpleSecretService struct {
 	storage storage.Storage
-	encoder de_encoding.Encoder
+	encoder ciphering.Encoder
 }
 
-func (ss *SimpleSecretService) ReadSecret(key string) (string, error) {
-	encryptedVal, err := ss.storage.Read(key)
-	checkError(err)
-	return ss.encoder.Decrypt(encryptedVal), nil
+func (ss *SimpleSecretService) ReadSecret(key string, password string) (string, error) {
+	codedKey, err := ss.encoder.Encrypt(key, ciphering.PassToSecretKey(password), false) //encode key without random aspect
+	if err != nil {
+		return "", err
+	}
+	encryptedVal, err := ss.storage.Read(codedKey)
+	if err != nil {
+		return "", err
+	}
+	decryptedVal, err := ss.encoder.Decrypt(encryptedVal, ciphering.PassToSecretKey(password), true)
+	if err != nil {
+		return "", err
+	}
+	return string(decryptedVal), nil
 }
 
-func (ss *SimpleSecretService) WriteSecret(key string, value string) {
-	ss.storage.Write(key, ss.encoder.Encrypt(value))
+func (ss *SimpleSecretService) WriteSecret(key string, value string, password string) error {
+	secretData, err := ss.encoder.Encrypt(value, ciphering.PassToSecretKey(password), true) //encode value(standart way)
+	if err != nil {
+		return err
+	}
+	codedKey, err := ss.encoder.Encrypt(key, ciphering.PassToSecretKey(password), false) //encode key without random aspect
+	if err != nil {
+		return err
+	}
+	return ss.storage.Write(codedKey, secretData)
 }
 
-func New(st storage.Storage, en de_encoding.Encoder) *SimpleSecretService {
-	//look for a file located on the file system
-	// if there is no file --> creates file --> writes down random key
+func New(st storage.Storage, en ciphering.Encoder) SimpleSecretService {
 
-	return &SimpleSecretService{
+	return SimpleSecretService{
 		storage: st,
 		encoder: en,
-	}
-}
-
-func checkError(err error) {
-	if err != nil {
-		panic(err)
 	}
 }
