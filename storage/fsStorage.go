@@ -60,7 +60,7 @@ func (st fsStorage) Write(key string, value string) error {
 
 func NewFsStorage() fsStorage {
 	return fsStorage{
-		path: "test.json",
+		path: "./data/test.json",
 	}
 }
 
