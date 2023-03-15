@@ -43,9 +43,11 @@ func (st fsStorage) Write(key string, value string) error {
 		return err
 	}
 	data := make(map[string]dataBox)
-	err = json.Unmarshal(file, &data)
-	if err != nil {
-		return err
+	if len(file) != 0 {
+		err = json.Unmarshal(file, &data)
+		if err != nil {
+			return err
+		}
 	}
 
 	data[key] = dataBox{Value: value}
