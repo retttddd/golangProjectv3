@@ -26,7 +26,7 @@ var set = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		srv := service.New(storage.NewFsStorage(), ciphering.NewAESEncoder(), ciphering.NewAESNotRandomEncoder())
+		srv := service.New(storage.NewFsStorage("./data/test.json"), ciphering.NewAESEncoder(), ciphering.NewAESNotRandomEncoder())
 		if err := srv.WriteSecret(keys, value, cipherKey); err != nil {
 			return err
 		}
@@ -49,7 +49,7 @@ var get = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		srv := service.New(storage.NewFsStorage(), ciphering.NewAESEncoder(), ciphering.NewAESNotRandomEncoder())
+		srv := service.New(storage.NewFsStorage("./data/test.json"), ciphering.NewAESEncoder(), ciphering.NewAESNotRandomEncoder())
 		value, err := srv.ReadSecret(keys, cipherKey)
 		if err != nil {
 			return err

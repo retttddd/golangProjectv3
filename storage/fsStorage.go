@@ -63,9 +63,9 @@ func (st fsStorage) Write(key string, value string) error {
 	return nil
 }
 
-func NewFsStorage() *fsStorage {
+func NewFsStorage(p string) *fsStorage {
 	return &fsStorage{
-		path: "./data/test.json",
+		path: p,
 	}
 }
 
