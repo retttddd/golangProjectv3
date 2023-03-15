@@ -11,7 +11,10 @@ type aesNotRandomEncoder struct {
 }
 
 func (er aesNotRandomEncoder) Decrypt(ct string, aesKey []byte) (plaintext []byte, err error) {
-	ciphertext, _ := hex.DecodeString(ct)
+	ciphertext, err := hex.DecodeString(ct)
+	if err != nil {
+		return nil, err
+	}
 	c, err := aes.NewCipher(aesKey)
 	if err != nil {
 		return nil, err
@@ -47,7 +50,7 @@ func (er aesNotRandomEncoder) Encrypt(plaintext string, aesKey []byte) (encrypte
 	return encryptedText, nil
 }
 
-func NewAESNotRandomEncoder() aesNotRandomEncoder {
+func NewAESNotRandomEncoder() *aesNotRandomEncoder {
 
-	return aesNotRandomEncoder{}
+	return &aesNotRandomEncoder{}
 }

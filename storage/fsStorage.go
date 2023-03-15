@@ -20,7 +20,7 @@ func (st fsStorage) Read(key string) (string, error) {
 		return "", err
 	}
 	data := make(map[string]dataBox)
-	json.Unmarshal(file, &data)
+	err = json.Unmarshal(file, &data)
 	if err != nil {
 		return "", err
 	}
@@ -43,7 +43,7 @@ func (st fsStorage) Write(key string, value string) error {
 		return err
 	}
 	data := make(map[string]dataBox)
-	json.Unmarshal(file, &data)
+	err = json.Unmarshal(file, &data)
 	if err != nil {
 		return err
 	}
@@ -61,8 +61,8 @@ func (st fsStorage) Write(key string, value string) error {
 	return nil
 }
 
-func NewFsStorage() fsStorage {
-	return fsStorage{
+func NewFsStorage() *fsStorage {
+	return &fsStorage{
 		path: "./data/test.json",
 	}
 }

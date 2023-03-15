@@ -39,9 +39,9 @@ func (ss *SimpleSecretService) WriteSecret(key string, value string, password st
 	return ss.storage.Write(codedKey, secretData)
 }
 
-func New(st storage.Storage, en ciphering.Encoder, er ciphering.Encoder) SimpleSecretService {
+func New(st storage.Storage, en ciphering.Encoder, er ciphering.Encoder) *SimpleSecretService {
 
-	return SimpleSecretService{
+	return &SimpleSecretService{
 		storage:          st,
 		encoder:          en,
 		notrandomencoder: er,

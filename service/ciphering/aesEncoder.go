@@ -13,7 +13,10 @@ type aesEncoder struct {
 }
 
 func (en aesEncoder) Decrypt(ct string, aesKey []byte) (plaintext []byte, err error) {
-	ciphertext, _ := hex.DecodeString(ct)
+	ciphertext, err := hex.DecodeString(ct)
+	if err != nil {
+		return nil, err
+	}
 
 	c, err := aes.NewCipher(aesKey)
 	if err != nil {
@@ -58,7 +61,7 @@ func (en aesEncoder) Encrypt(plaintext string, aesKey []byte) (encryptedText str
 
 }
 
-func NewAESEncoder() aesEncoder {
+func NewAESEncoder() *aesEncoder {
 
-	return aesEncoder{}
+	return &aesEncoder{}
 }
