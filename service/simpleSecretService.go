@@ -6,12 +6,13 @@ import (
 )
 
 type SimpleSecretService struct {
-	storage storage.Storage
-	encoder ciphering.Encoder
+	storage          storage.Storage
+	encoder          ciphering.Encoder
+	notrandomencoder ciphering.Encoder
 }
 
 func (ss *SimpleSecretService) ReadSecret(key string, password string) (string, error) {
-	codedKey, err := ss.encoder.Encrypt(key, ciphering.PassToSecretKey(password), false) //encode key without random aspect
+	codedKey, err := ss.notrandomencoder.Encrypt(key, ciphering.PassToSecretKey(password)) //encode key without random aspect
 	if err != nil {
 		return "", err
 	}
@@ -19,7 +20,7 @@ func (ss *SimpleSecretService) ReadSecret(key string, password string) (string, 
 	if err != nil {
 		return "", err
 	}
-	decryptedVal, err := ss.encoder.Decrypt(encryptedVal, ciphering.PassToSecretKey(password), true)
+	decryptedVal, err := ss.encoder.Decrypt(encryptedVal, ciphering.PassToSecretKey(password))
 	if err != nil {
 		return "", err
 	}
@@ -27,21 +28,22 @@ func (ss *SimpleSecretService) ReadSecret(key string, password string) (string, 
 }
 
 func (ss *SimpleSecretService) WriteSecret(key string, value string, password string) error {
-	secretData, err := ss.encoder.Encrypt(value, ciphering.PassToSecretKey(password), true) //encode value(standart way)
+	secretData, err := ss.encoder.Encrypt(value, ciphering.PassToSecretKey(password)) //encode value(standart way)
 	if err != nil {
 		return err
 	}
-	codedKey, err := ss.encoder.Encrypt(key, ciphering.PassToSecretKey(password), false) //encode key without random aspect
+	codedKey, err := ss.notrandomencoder.Encrypt(key, ciphering.PassToSecretKey(password)) //encode key without random aspect
 	if err != nil {
 		return err
 	}
 	return ss.storage.Write(codedKey, secretData)
 }
 
-func New(st storage.Storage, en ciphering.Encoder) SimpleSecretService {
+func New(st storage.Storage, en ciphering.Encoder, er ciphering.Encoder) SimpleSecretService {
 
 	return SimpleSecretService{
-		storage: st,
-		encoder: en,
+		storage:          st,
+		encoder:          en,
+		notrandomencoder: er,
 	}
 }
