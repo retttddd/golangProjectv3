@@ -1,6 +1,6 @@
-package storage
+package service
 
-type Storage interface {
+type storage interface {
 	Read(key string) (string, error)
 	Write(key string, value string) error
 }

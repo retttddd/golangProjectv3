@@ -12,32 +12,32 @@ import (
 type aesEncoder struct {
 }
 
-func (en aesEncoder) Decrypt(ct string, aesKey []byte) (plaintext []byte, err error) {
+func (en aesEncoder) Decrypt(ct string, aesKey []byte) (string, error) {
 	ciphertext, err := hex.DecodeString(ct)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	c, err := aes.NewCipher(aesKey)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	gcm, err := cipher.NewGCM(c)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	nonceSize := gcm.NonceSize()
 	if len(ciphertext) < nonceSize {
-		return nil, errors.New("ciphertext len is too short")
+		return "", errors.New("ciphertext len is too short")
 	}
 	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
-	plaintext, err = gcm.Open(nil, nonce, ciphertext, nil)
+	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return plaintext[:], nil
+	return string(plaintext[:]), nil
 }
 
 func (en aesEncoder) Encrypt(plaintext string, aesKey []byte) (encryptedText string, err error) {

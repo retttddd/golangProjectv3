@@ -7,34 +7,34 @@ import (
 	"errors"
 )
 
-type aesNotRandomEncoder struct {
+type regularEncoder struct {
 }
 
-func (er aesNotRandomEncoder) Decrypt(ct string, aesKey []byte) (plaintext []byte, err error) {
+func (er regularEncoder) Decrypt(ct string, aesKey []byte) (string, error) {
 	ciphertext, err := hex.DecodeString(ct)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	c, err := aes.NewCipher(aesKey)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	gcm, err := cipher.NewGCM(c)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	nonceSize := gcm.NonceSize()
 	if len(ciphertext) < nonceSize {
-		return nil, errors.New("ciphertext len is too short")
+		return "", errors.New("ciphertext len is too short")
 	}
-	plaintext, err = gcm.Open(nil, make([]byte, nonceSize), ciphertext, nil)
+	plaintext, err := gcm.Open(nil, make([]byte, nonceSize), ciphertext, nil)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return plaintext[:], nil
+	return string(plaintext[:]), nil
 }
 
-func (er aesNotRandomEncoder) Encrypt(plaintext string, aesKey []byte) (encryptedText string, err error) {
+func (er regularEncoder) Encrypt(plaintext string, aesKey []byte) (encryptedText string, err error) {
 	c, err := aes.NewCipher(aesKey)
 	if err != nil {
 		return "", err
@@ -50,7 +50,7 @@ func (er aesNotRandomEncoder) Encrypt(plaintext string, aesKey []byte) (encrypte
 	return encryptedText, nil
 }
 
-func NewAESNotRandomEncoder() *aesNotRandomEncoder {
+func NewRegularEncoder() *regularEncoder {
 
-	return &aesNotRandomEncoder{}
+	return &regularEncoder{}
 }
