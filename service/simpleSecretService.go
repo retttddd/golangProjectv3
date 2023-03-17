@@ -1,37 +1,48 @@
 package service
 
 import (
-	"awesomeProject3/service/de_encoding"
-	"awesomeProject3/storage"
+	"awesomeProject3/service/ciphering"
 )
 
 type SimpleSecretService struct {
-	storage storage.Storage
-	encoder de_encoding.Encoder
+	storage    storage
+	encoder    encoder
+	keyEncoder encoder
 }
 
-func (ss *SimpleSecretService) ReadSecret(key string) (string, error) {
-	encryptedVal, err := ss.storage.Read(key)
-	checkError(err)
-	return ss.encoder.Decrypt(encryptedVal), nil
-}
-
-func (ss *SimpleSecretService) WriteSecret(key string, value string) {
-	ss.storage.Write(key, ss.encoder.Encrypt(value))
-}
-
-func New(st storage.Storage, en de_encoding.Encoder) *SimpleSecretService {
-	//look for a file located on the file system
-	// if there is no file --> creates file --> writes down random key
-
-	return &SimpleSecretService{
-		storage: st,
-		encoder: en,
-	}
-}
-
-func checkError(err error) {
+func (ss *SimpleSecretService) ReadSecret(key string, password string) (string, error) {
+	codedKey, err := ss.keyEncoder.Encrypt(key, ciphering.PassToSecretKey(password))
 	if err != nil {
-		panic(err)
+		return "", err
+	}
+	encryptedVal, err := ss.storage.Read(codedKey)
+	if err != nil {
+		return "", err
+	}
+	decryptedVal, err := ss.encoder.Decrypt(encryptedVal, ciphering.PassToSecretKey(password))
+	if err != nil {
+		return "", err
+	}
+	return decryptedVal, nil
+}
+
+func (ss *SimpleSecretService) WriteSecret(key string, value string, password string) error {
+	secretData, err := ss.encoder.Encrypt(value, ciphering.PassToSecretKey(password))
+	if err != nil {
+		return err
+	}
+	codedKey, err := ss.keyEncoder.Encrypt(key, ciphering.PassToSecretKey(password))
+	if err != nil {
+		return err
+	}
+	return ss.storage.Write(codedKey, secretData)
+}
+
+func New(st storage, en encoder, er encoder) *SimpleSecretService {
+	//we create encoder and keyEncoder to separate encryption flow into key encryption(without random injection) and value encryption(with random part)
+	return &SimpleSecretService{
+		storage:    st,
+		encoder:    en,
+		keyEncoder: er,
 	}
 }
