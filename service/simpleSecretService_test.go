@@ -37,23 +37,20 @@ func (m *mockEncoder) Decrypt(ct string, cipherKey []byte) (string, error) {
 	return arg.String(0), arg.Error(1)
 }
 
-//On("Encrypt", "my-value", mock.AnythingOfType("[]uint8")).Return([]byte("encrypted-value"), nil)
-//On("Encrypt", "my-key", mock.AnythingOfType("[]uint8")).Return([]byte("encrypted-key"), nil)
-//.On("Write", []byte("encrypted-key"), []byte("encrypted-value")).Return(nil)
-
 func TestSimpleSecretService_WriteSecret(t *testing.T) {
+
 	me := newMockEncoder()
+	defer me.AssertExpectations(t)
 	me.On("Encrypt", notSecretVal, mock.Anything).Return(secretVal, nil)
-	me.On("Encrypt", notSecretVal, mock.Anything).Return(secretVal2, nil)
+	me.On("Encrypt", "key", mock.Anything).Return(secretVal2, nil)
 
 	ms := newMockStorage()
-	ms.On("Write", secretVal, secretVal2).Return(nil)
+	defer ms.AssertExpectations(t)
+	ms.On("Write", secretVal2, secretVal).Return(nil)
 
 	ss := New(ms, me, me)
 	err := ss.WriteSecret("key", notSecretVal, "qweqw")
 	require.Nil(t, err)
-
-	//m.AssertNumberOfCalls(t, "Encrypt", 2)
 
 }
 

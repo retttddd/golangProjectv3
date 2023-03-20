@@ -12,30 +12,53 @@ const sourceString = "testString"
 const key = "1234567890123456"
 const wrongKey = "23"
 
-var encryptionTestCases = []struct {
-	name      string
-	source    string
-	key       string
-	expected  string
-	expectErr bool
-}{
-	{
-		name:      "encryption valid case",
-		source:    sourceString,
-		key:       key,
-		expected:  sourceString,
-		expectErr: false,
-	},
-	{
-		name:      "encryptiom wrong key size",
-		source:    sourceString,
-		key:       wrongKey,
-		expected:  "",
-		expectErr: true,
-	},
-}
+//var encryptionTestCases = []struct {
+//	name      string
+//	source    string
+//	key       string
+//	expected  string
+//	expectErr bool
+//}{
+//	{
+//		name:      "encryption valid case",
+//		source:    sourceString,
+//		key:       key,
+//		expected:  sourceString,
+//		expectErr: false,
+//	},
+//	{
+//		name:      "encryptiom wrong key size",
+//		source:    sourceString,
+//		key:       wrongKey,
+//		expected:  "",
+//		expectErr: true,
+//	},
+//}
 
 func TestAesEncoder_Encrypt_TableDriven(t *testing.T) {
+	var encryptionTestCases = []struct {
+		name      string
+		source    string
+		key       string
+		expected  string
+		expectErr bool
+	}{
+		{
+			name:      "encryption valid case",
+			source:    sourceString,
+			key:       key,
+			expected:  sourceString,
+			expectErr: false,
+		},
+		{
+			name:      "encryptiom wrong key size",
+			source:    sourceString,
+			key:       wrongKey,
+			expected:  "",
+			expectErr: true,
+		},
+	}
+
 	for _, tc := range encryptionTestCases {
 		t.Run(tc.name, func(t *testing.T) {
 			encoder := NewAESEncoder()
