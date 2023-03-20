@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -9,6 +11,8 @@ import (
 const notSecretVal = "decryptedValue"
 const secretVal = "encryptedValue"
 const secretVal2 = "encryptedValue2"
+const valFromStorage = "valueFromStorage"
+const read = "Read"
 
 type mockStorage struct{ mock.Mock }
 
@@ -54,9 +58,21 @@ func TestSimpleSecretService_WriteSecret(t *testing.T) {
 
 }
 
+func TestSimpleSecretService_WriteSecret_Errors(t *testing.T) {
+	ms := newMockStorage()
+	me := newMockEncoder()
+	ss := New(ms, me, me)
+
+	defer me.AssertExpectations(t)
+
+	me.On("Encrypt", notSecretVal, mock.Anything).Return("", errors.New("encryption error"))
+	err := ss.WriteSecret("key", notSecretVal, "qweqw")
+	assert.Error(t, err)
+
+}
+
 func TestSimpleSecretService_ReadSecret(t *testing.T) {
-	const read = "Read"
-	const valFromStorage = "valueFromStorage"
+
 	ms := newMockStorage()
 	ms.On(read, secretVal).Return(valFromStorage, nil)
 
@@ -71,4 +87,47 @@ func TestSimpleSecretService_ReadSecret(t *testing.T) {
 	require.Equal(t, result, notSecretVal)
 }
 
-var m mockStorage
+func TestSimpleSecretService_ReadSecret_EncryptError(t *testing.T) {
+	ms := newMockStorage()
+	me := newMockEncoder()
+	ss := New(ms, me, me)
+
+	defer me.AssertExpectations(t)
+
+	me.On("Encrypt", "key", mock.Anything).Return("", errors.New("key encryption error"))
+	result, err := ss.ReadSecret("key", "qweqw")
+	require.Empty(t, result)
+	assert.Error(t, err)
+}
+
+func TestSimpleSecretService_ReadSecret_ReadError(t *testing.T) {
+	ms := newMockStorage()
+	me := newMockEncoder()
+	ss := New(ms, me, me)
+
+	defer me.AssertExpectations(t)
+	me.On("Encrypt", "key", mock.Anything).Return(secretVal2, nil)
+
+	defer ms.AssertExpectations(t)
+	ms.On(read, secretVal2).Return("", errors.New("reading file from storage error"))
+
+	result, err := ss.ReadSecret("key", "qweqw")
+	require.Empty(t, result)
+	assert.Error(t, err)
+}
+func TestSimpleSecretService_ReadSecret_DecryptError(t *testing.T) {
+	ms := newMockStorage()
+	me := newMockEncoder()
+	ss := New(ms, me, me)
+
+	defer me.AssertExpectations(t)
+	me.On("Encrypt", "key", mock.Anything).Return(secretVal, nil)
+	ms.On(read, secretVal).Return(valFromStorage, nil)
+
+	defer ms.AssertExpectations(t)
+	me.On("Decrypt", valFromStorage, mock.Anything).Return("", errors.New("Encrypt Error"))
+
+	result, err := ss.ReadSecret("key", "qweqw")
+	require.Empty(t, result)
+	assert.Error(t, err)
+}
