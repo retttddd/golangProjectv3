@@ -12,7 +12,7 @@ const sourceString = "testString"
 const key = "1234567890123456"
 const wrongKey = "23"
 
-func TestAesEncoder_Encrypt_TableDriven(t *testing.T) {
+func TestAesEncoder_Encrypt(t *testing.T) {
 	var encryptionTestCases = []struct {
 		name      string
 		source    string
@@ -50,7 +50,7 @@ func TestAesEncoder_Encrypt_TableDriven(t *testing.T) {
 	}
 }
 
-func TestAesEncoder_Decrypt_TableDriven(t *testing.T) {
+func TestAesEncoder_Decrypt(t *testing.T) {
 	var decryptionTestCases = []struct {
 		name      string
 		encrypted string
