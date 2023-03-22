@@ -1,6 +1,7 @@
 package service
 
 import (
+	"awesomeProject3/service/ciphering"
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -12,6 +13,7 @@ const notSecretVal = "decryptedValue"
 const secretVal = "encryptedValue"
 const secretVal2 = "encryptedValue2"
 const valFromStorage = "valueFromStorage"
+const password = "passwordIs32bytelongandOtherTxt"
 const read = "Read"
 
 type mockStorage struct{ mock.Mock }
@@ -45,15 +47,15 @@ func TestSimpleSecretService_WriteSecret(t *testing.T) {
 
 	me := newMockEncoder()
 	defer me.AssertExpectations(t)
-	me.On("Encrypt", notSecretVal, mock.Anything).Return(secretVal, nil)
-	me.On("Encrypt", "key", mock.Anything).Return(secretVal2, nil)
+	me.On("Encrypt", notSecretVal, ciphering.PassToSecretKey(password)).Return(secretVal, nil)
+	me.On("Encrypt", "key", ciphering.PassToSecretKey(password)).Return(secretVal2, nil)
 
 	ms := newMockStorage()
 	defer ms.AssertExpectations(t)
 	ms.On("Write", secretVal2, secretVal).Return(nil)
 
 	ss := New(ms, me, me)
-	err := ss.WriteSecret("key", notSecretVal, "qweqw")
+	err := ss.WriteSecret("key", notSecretVal, password)
 	require.Nil(t, err)
 
 }
@@ -65,8 +67,8 @@ func TestSimpleSecretService_WriteSecret_Errors(t *testing.T) {
 
 	defer me.AssertExpectations(t)
 
-	me.On("Encrypt", notSecretVal, mock.Anything).Return("", errors.New("encryption error"))
-	err := ss.WriteSecret("key", notSecretVal, "qweqw")
+	me.On("Encrypt", notSecretVal, ciphering.PassToSecretKey(password)).Return("", errors.New("encryption error"))
+	err := ss.WriteSecret("key", notSecretVal, password)
 	assert.Error(t, err)
 
 }
@@ -77,11 +79,11 @@ func TestSimpleSecretService_ReadSecret(t *testing.T) {
 	ms.On(read, secretVal).Return(valFromStorage, nil)
 
 	me := newMockEncoder()
-	me.On("Encrypt", notSecretVal, mock.Anything).Return(secretVal, nil)
-	me.On("Decrypt", valFromStorage, mock.Anything).Return(notSecretVal, nil)
+	me.On("Encrypt", notSecretVal, ciphering.PassToSecretKey(password)).Return(secretVal, nil)
+	me.On("Decrypt", valFromStorage, ciphering.PassToSecretKey(password)).Return(notSecretVal, nil)
 
 	ss := New(ms, me, me)
-	result, err := ss.ReadSecret(notSecretVal, "qweqw")
+	result, err := ss.ReadSecret(notSecretVal, password)
 	require.Nil(t, err)
 	require.NotNil(t, result)
 	require.Equal(t, result, notSecretVal)
@@ -94,8 +96,8 @@ func TestSimpleSecretService_ReadSecret_EncryptError(t *testing.T) {
 
 	defer me.AssertExpectations(t)
 
-	me.On("Encrypt", "key", mock.Anything).Return("", errors.New("key encryption error"))
-	result, err := ss.ReadSecret("key", "qweqw")
+	me.On("Encrypt", "key", ciphering.PassToSecretKey(password)).Return("", errors.New("key encryption error"))
+	result, err := ss.ReadSecret("key", password)
 	require.Empty(t, result)
 	assert.Error(t, err)
 }
@@ -106,12 +108,12 @@ func TestSimpleSecretService_ReadSecret_ReadError(t *testing.T) {
 	ss := New(ms, me, me)
 
 	defer me.AssertExpectations(t)
-	me.On("Encrypt", "key", mock.Anything).Return(secretVal2, nil)
+	me.On("Encrypt", "key", ciphering.PassToSecretKey(password)).Return(secretVal2, nil)
 
 	defer ms.AssertExpectations(t)
 	ms.On(read, secretVal2).Return("", errors.New("reading file from storage error"))
 
-	result, err := ss.ReadSecret("key", "qweqw")
+	result, err := ss.ReadSecret("key", password)
 	require.Empty(t, result)
 	assert.Error(t, err)
 }
@@ -121,13 +123,13 @@ func TestSimpleSecretService_ReadSecret_DecryptError(t *testing.T) {
 	ss := New(ms, me, me)
 
 	defer me.AssertExpectations(t)
-	me.On("Encrypt", "key", mock.Anything).Return(secretVal, nil)
+	me.On("Encrypt", "key", ciphering.PassToSecretKey(password)).Return(secretVal, nil)
 	ms.On(read, secretVal).Return(valFromStorage, nil)
 
 	defer ms.AssertExpectations(t)
-	me.On("Decrypt", valFromStorage, mock.Anything).Return("", errors.New("Encrypt Error"))
+	me.On("Decrypt", valFromStorage, ciphering.PassToSecretKey(password)).Return("", errors.New("Encrypt Error"))
 
-	result, err := ss.ReadSecret("key", "qweqw")
+	result, err := ss.ReadSecret("key", password)
 	require.Empty(t, result)
 	assert.Error(t, err)
 }

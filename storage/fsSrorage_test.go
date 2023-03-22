@@ -2,7 +2,6 @@ package storage
 
 import (
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"log"
@@ -26,6 +25,21 @@ func TestRead(t *testing.T) {
 			expected:    "bar",
 			expectedErr: nil,
 		},
+		{
+			name:        "Empty key",
+			key:         "",
+			fileContent: `{"": {"value": "bar"}}`,
+			expected:    "bar",
+			expectedErr: nil,
+		},
+		{
+			name:        "Empty  value",
+			key:         "key",
+			fileContent: `{"key": {"value": ""}}`,
+			expected:    "",
+			expectedErr: nil,
+		},
+
 		{
 			name:        "Key not found in the file",
 			path:        "",
@@ -69,16 +83,16 @@ func TestRead(t *testing.T) {
 			} else {
 				targetFilePath = tc.path
 			}
+			defer os.Remove(targetFilePath)
 			storage := NewFsStorage(targetFilePath)
 			result, err := storage.Read(tc.key)
 			if tc.expectedErr == nil {
 				require.NotNil(t, result)
 				require.Equal(t, tc.expected, result)
 			} else {
-				assert.ErrorContains(t, err, tc.expectedErr.Error())
+				require.ErrorContains(t, err, tc.expectedErr.Error())
 			}
 
-			os.Remove(targetFilePath)
 		})
 
 	}
@@ -106,7 +120,25 @@ func TestWrite(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "file was not foundvalid case",
+			name:        "empty key",
+			path:        "",
+			key:         "",
+			Data:        `{"": {"value": "validData"}}`,
+			Value:       "Value",
+			expected:    "",
+			expectedErr: nil,
+		},
+		{
+			name:        "empty value",
+			path:        "",
+			key:         "keynew",
+			Data:        `{"key": {"value": ""}}`,
+			Value:       "",
+			expected:    "",
+			expectedErr: nil,
+		},
+		{
+			name:        "file was not found valid case",
 			path:        "/tmp/data.json",
 			key:         "validKeyNew",
 			Data:        `{"validKey": {"value": "validData"}}`,
@@ -115,7 +147,16 @@ func TestWrite(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "file was not found",
+			name:        "corrupted path",
+			path:        "/trere/data.json",
+			key:         "validKeyNew",
+			Data:        `{"validKey": {"value": "validData"}}`,
+			Value:       "Value",
+			expected:    "",
+			expectedErr: errors.New("no such file or directory"),
+		},
+		{
+			name:        "json unmarshal error",
 			path:        "",
 			key:         "validKeyNew",
 			Data:        `invalid-json-format`,
@@ -140,7 +181,7 @@ func TestWrite(t *testing.T) {
 			} else {
 				targetFilePath = tc.path
 			}
-
+			defer os.Remove(targetFilePath)
 			storage := NewFsStorage(targetFilePath)
 			err := storage.Write(tc.key, tc.Value)
 
@@ -152,10 +193,9 @@ func TestWrite(t *testing.T) {
 				require.Nil(t, err)
 				require.Equal(t, tc.Value, result)
 			} else {
-				assert.ErrorContains(t, err, tc.expectedErr.Error())
+				require.ErrorContains(t, err, tc.expectedErr.Error())
 			}
 
-			os.Remove(targetFilePath)
 		})
 
 	}
