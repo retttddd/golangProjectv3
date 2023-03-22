@@ -1,21 +1,17 @@
 package ciphering
 
 import (
-	"testing"
-
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
-const isBase64 = "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$"
-const encryptedString = "848d56796ac855b0b3f06cb77bb652d2a9a4b84f64026dbfbfe94aaf76cb843608c85a2112ac"
-const sourceString = "testString"
-const key = "1234567890123456"
-const wrongKey = "23"
+const regularryEncryptedString = "d4912c64252d453c7776ae2261bce5d11f9dbcdf8ca4d4a92ee1"
 
-func TestAesEncoder_Encrypt(t *testing.T) {
+func TestAesNotRandomEncoder_Encrypt(t *testing.T) {
 	var encryptionTestCases = []struct {
-		name      string
-		source    string
+		name   string
+		source string
+
 		key       string
 		expected  string
 		expectErr bool
@@ -24,7 +20,7 @@ func TestAesEncoder_Encrypt(t *testing.T) {
 			name:      "encryption valid case",
 			source:    sourceString,
 			key:       key,
-			expected:  sourceString,
+			expected:  regularryEncryptedString,
 			expectErr: false,
 		},
 		{
@@ -38,19 +34,20 @@ func TestAesEncoder_Encrypt(t *testing.T) {
 
 	for _, tc := range encryptionTestCases {
 		t.Run(tc.name, func(t *testing.T) {
-			encoder := NewAESEncoder()
+			encoder := NewRegularEncoder()
 			result, err := encoder.Encrypt(tc.source, []byte(tc.key))
 			if tc.expectErr {
 				require.Error(t, err)
 			} else {
 				require.Nil(t, err)
-				require.Regexp(t, isBase64, result)
+				//require.Regexp(t, isBase64, result)
+				require.Equal(t, tc.expected, result)
 			}
 		})
 	}
 }
 
-func TestAesEncoder_Decrypt(t *testing.T) {
+func TestAesNotRandomEncoder_Decrypt(t *testing.T) {
 	var decryptionTestCases = []struct {
 		name      string
 		encrypted string
@@ -60,7 +57,7 @@ func TestAesEncoder_Decrypt(t *testing.T) {
 	}{
 		{
 			name:      "valid case",
-			encrypted: encryptedString,
+			encrypted: regularryEncryptedString,
 			key:       key,
 			expected:  sourceString,
 			expectErr: false,
@@ -83,7 +80,7 @@ func TestAesEncoder_Decrypt(t *testing.T) {
 
 	for _, tc := range decryptionTestCases {
 		t.Run(tc.name, func(t *testing.T) {
-			decoder := NewAESEncoder()
+			decoder := NewRegularEncoder()
 			result, err := decoder.Decrypt(tc.encrypted, []byte(tc.key))
 			if tc.expectErr {
 				require.Error(t, err)
