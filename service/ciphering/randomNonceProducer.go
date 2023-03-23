@@ -1,7 +1,6 @@
 package ciphering
 
 import (
-	"crypto/rand"
 	"io"
 )
 
@@ -14,10 +13,10 @@ func NewRandomNonceProducer(rnd io.Reader) *randomNonceProducer {
 		rndReader: rnd,
 	}
 }
-func (*randomNonceProducer) generate(size int) (string, error) {
+func (rnp *randomNonceProducer) generate(size int) (string, error) {
 	nonce := make([]byte, size)
 
-	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+	if _, err := io.ReadFull(rnp.rndReader, nonce); err != nil {
 		return "", err
 	}
 	return string(nonce[:]), nil
