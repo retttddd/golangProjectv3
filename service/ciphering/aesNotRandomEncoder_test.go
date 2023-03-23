@@ -39,8 +39,7 @@ func TestAesNotRandomEncoder_Encrypt(t *testing.T) {
 			if tc.expectErr {
 				require.Error(t, err)
 			} else {
-				require.Nil(t, err)
-				//require.Regexp(t, isBase64, result)
+				require.NoError(t, err)
 				require.Equal(t, tc.expected, result)
 			}
 		})

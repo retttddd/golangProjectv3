@@ -4,6 +4,7 @@ import (
 	"awesomeProject3/service"
 	"awesomeProject3/service/ciphering"
 	"awesomeProject3/storage"
+	"crypto/rand"
 	"fmt"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +27,7 @@ var set = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		srv := service.New(storage.NewFsStorage("./data/test.json"), ciphering.NewAESEncoder(), ciphering.NewRegularEncoder())
+		srv := service.New(storage.NewFsStorage("./data/test.json"), ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)), ciphering.NewRegularEncoder())
 		if err := srv.WriteSecret(keys, value, cipherKey); err != nil {
 			return err
 		}
@@ -49,7 +50,7 @@ var get = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		srv := service.New(storage.NewFsStorage("./data/test.json"), ciphering.NewAESEncoder(), ciphering.NewRegularEncoder())
+		srv := service.New(storage.NewFsStorage("./data/test.json"), ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)), ciphering.NewRegularEncoder())
 		value, err := srv.ReadSecret(keys, cipherKey)
 		if err != nil {
 			return err

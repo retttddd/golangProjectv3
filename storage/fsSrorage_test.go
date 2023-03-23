@@ -87,6 +87,7 @@ func TestRead(t *testing.T) {
 			storage := NewFsStorage(targetFilePath)
 			result, err := storage.Read(tc.key)
 			if tc.expectedErr == nil {
+				require.NoError(t, err)
 				require.NotNil(t, result)
 				require.Equal(t, tc.expected, result)
 			} else {
