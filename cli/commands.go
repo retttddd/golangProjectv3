@@ -9,12 +9,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type constReader struct {
+}
+
+func (r *constReader) Read(p []byte) (n int, err error) {
+	for i := range p {
+		p[i] = 0
+	}
+
+	return len(p), nil
+}
+
 var set = &cobra.Command{
 	Use:   "set",
 	Short: "writes data in",
 	Long:  "give 3 parameters: key value password",
 
 	RunE: func(cmd *cobra.Command, args []string) error {
+		cReader := &constReader{}
 		keys, err := cmd.Flags().GetString("key")
 		if err != nil {
 			return err
@@ -27,7 +39,9 @@ var set = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		srv := service.New(storage.NewFsStorage("./data/test.json"), ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)), ciphering.NewRegularEncoder())
+		srv := service.New(storage.NewFsStorage("./data/test.json"),
+			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
+			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
 		if err := srv.WriteSecret(keys, value, cipherKey); err != nil {
 			return err
 		}
@@ -42,6 +56,7 @@ var get = &cobra.Command{
 	Short: "reads data",
 	Long:  "give 2 parameters: key password",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		cReader := &constReader{}
 		keys, err := cmd.Flags().GetString("key")
 		if err != nil {
 			return err
@@ -50,7 +65,9 @@ var get = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		srv := service.New(storage.NewFsStorage("./data/test.json"), ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)), ciphering.NewRegularEncoder())
+		srv := service.New(storage.NewFsStorage("./data/test.json"),
+			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
+			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
 		value, err := srv.ReadSecret(keys, cipherKey)
 		if err != nil {
 			return err

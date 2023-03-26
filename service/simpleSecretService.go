@@ -39,7 +39,8 @@ func (ss *SimpleSecretService) WriteSecret(key string, value string, password st
 }
 
 func New(st storage, en encoder, er encoder) *SimpleSecretService {
-	//we create encoder and keyEncoder to separate encryption flow into key encryption(without random injection) and value encryption(with random part)
+	//we create encoder and keyEncoder to separate encryption flow into key encryption(without random injection)
+	//and value encryption(with random part)
 	return &SimpleSecretService{
 		storage:    st,
 		encoder:    en,

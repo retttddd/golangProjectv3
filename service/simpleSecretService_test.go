@@ -42,50 +42,50 @@ func (m *mockEncoder) Decrypt(ct string, cipherKey []byte) (string, error) {
 	return arg.String(0), arg.Error(1)
 }
 
-func TestSimpleSecretService_WriteSecret2(t *testing.T) {
+func TestSimpleSecretService_WriteSecret(t *testing.T) {
 	var testCases = []struct {
-		name           string
-		encryptVal     string
-		encryptErr     error
-		value          string
-		writeErr       error
-		secretKey      string
-		key            string
-		numberOfCallsW int
-		numberOfCallsE int
-		expectedErr    bool
+		name                 string
+		encryptVal           string
+		encryptErr           error
+		value                string
+		writeErr             error
+		secretKey            string
+		key                  string
+		numberOfCallsWrite   int
+		numberOfCallsEncrypt int
+		expectedErr          bool
 	}{
 		{
-			name:           "Successful Write Secret",
-			encryptVal:     secretVal,
-			secretKey:      password,
-			key:            "key",
-			value:          notSecretVal,
-			numberOfCallsW: 1,
-			numberOfCallsE: 2,
-			expectedErr:    false,
+			name:                 "Successful Write Secret",
+			encryptVal:           secretVal,
+			secretKey:            password,
+			key:                  "key",
+			value:                notSecretVal,
+			numberOfCallsWrite:   1,
+			numberOfCallsEncrypt: 2,
+			expectedErr:          false,
 		},
 		{
-			name:           "Unsuccessful encrypt Write Secret",
-			encryptVal:     secretVal,
-			secretKey:      password,
-			key:            "key",
-			value:          notSecretVal,
-			encryptErr:     errors.New("encrypt Error"),
-			numberOfCallsW: 0,
-			numberOfCallsE: 1,
-			expectedErr:    true,
+			name:                 "Unsuccessful encrypt Write Secret",
+			encryptVal:           secretVal,
+			secretKey:            password,
+			key:                  "key",
+			value:                notSecretVal,
+			encryptErr:           errors.New("encrypt Error"),
+			numberOfCallsWrite:   0,
+			numberOfCallsEncrypt: 1,
+			expectedErr:          true,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			me := newMockEncoder()
-			defer me.AssertNumberOfCalls(t, "Encrypt", tc.numberOfCallsE)
+			defer me.AssertNumberOfCalls(t, "Encrypt", tc.numberOfCallsEncrypt)
 			me.On("Encrypt", tc.value, ciphering.PassToSecretKey(tc.secretKey)).Return(tc.encryptVal, tc.encryptErr)
 			me.On("Encrypt", tc.key, ciphering.PassToSecretKey(tc.secretKey)).Return(tc.encryptVal, tc.encryptErr)
 
 			ms := newMockStorage()
-			defer ms.AssertNumberOfCalls(t, "Write", tc.numberOfCallsW)
+			defer ms.AssertNumberOfCalls(t, "Write", tc.numberOfCallsWrite)
 			ms.On("Write", tc.encryptVal, tc.encryptVal).Return(tc.writeErr)
 
 			ss := New(ms, me, me)
@@ -103,104 +103,94 @@ func TestSimpleSecretService_WriteSecret2(t *testing.T) {
 func TestSimpleSecretService_ReadSecret(t *testing.T) {
 
 	var testCases = []struct {
-		name           string
-		readVal        string
-		readErr        error
-		encryptVal     string
-		encryptErr     error
-		decryptVal     string
-		decryptErr     error
-		secretKey      string
-		key            string
-		value          string
-		expectedResult string
-		expectedError  bool
-		numberOfCallsR int
-		numberOfCallsE int
-		numberOfCallsD int
+		name                 string
+		readVal              string
+		readErr              error
+		encryptVal           string
+		encryptErr           error
+		decryptVal           string
+		decryptErr           error
+		secretKey            string
+		expectedResult       string
+		expectedError        bool
+		numberOfCallsRead    int
+		numberOfCallsEncrypt int
+		numberOfCallsDecrypt int
 	}{
 		{
-			name:           "Successful Read Secret",
-			readVal:        secretVal,
-			encryptVal:     secretVal,
-			decryptVal:     notSecretVal,
-			secretKey:      password,
-			key:            "key",
-			value:          notSecretVal,
-			expectedResult: notSecretVal,
-			expectedError:  false,
-			numberOfCallsR: 1,
-			numberOfCallsE: 1,
-			numberOfCallsD: 1,
+			name:                 "Successful Read Secret",
+			readVal:              secretVal,
+			encryptVal:           secretVal,
+			decryptVal:           notSecretVal,
+			secretKey:            password,
+			expectedResult:       notSecretVal,
+			expectedError:        false,
+			numberOfCallsRead:    1,
+			numberOfCallsEncrypt: 1,
+			numberOfCallsDecrypt: 1,
 		},
 		{
-			name:           "Read Secret Encrypt Error",
-			readVal:        secretVal,
-			encryptVal:     secretVal,
-			encryptErr:     errors.New("encryptError"),
-			decryptVal:     notSecretVal,
-			secretKey:      password,
-			key:            "key",
-			value:          notSecretVal,
-			expectedResult: "",
-			expectedError:  true,
-			numberOfCallsR: 0,
-			numberOfCallsE: 1,
-			numberOfCallsD: 0,
+			name:                 "Read Secret Encrypt Error",
+			readVal:              secretVal,
+			encryptVal:           secretVal,
+			encryptErr:           errors.New("encryptError"),
+			decryptVal:           notSecretVal,
+			secretKey:            password,
+			expectedResult:       "",
+			expectedError:        true,
+			numberOfCallsRead:    0,
+			numberOfCallsEncrypt: 1,
+			numberOfCallsDecrypt: 0,
 		},
 		{
-			name:           "Read Secret read Error",
-			readVal:        secretVal,
-			readErr:        errors.New("ReadError"),
-			encryptVal:     secretVal,
-			decryptVal:     notSecretVal,
-			secretKey:      password,
-			key:            "key",
-			value:          notSecretVal,
-			expectedResult: "",
-			expectedError:  true,
-			numberOfCallsR: 1,
-			numberOfCallsE: 1,
-			numberOfCallsD: 0,
+			name:                 "Read Secret read Error",
+			readVal:              secretVal,
+			readErr:              errors.New("ReadError"),
+			encryptVal:           secretVal,
+			decryptVal:           notSecretVal,
+			secretKey:            password,
+			expectedResult:       "",
+			expectedError:        true,
+			numberOfCallsRead:    1,
+			numberOfCallsEncrypt: 1,
+			numberOfCallsDecrypt: 0,
 		},
 		{
-			name:           "Read Secret Decrypt Error",
-			readVal:        secretVal,
-			decryptErr:     errors.New("DecryptError"),
-			encryptVal:     secretVal,
-			decryptVal:     notSecretVal,
-			secretKey:      password,
-			key:            "key",
-			value:          notSecretVal,
-			expectedResult: "",
-			expectedError:  true,
-			numberOfCallsR: 1,
-			numberOfCallsE: 1,
-			numberOfCallsD: 1,
+			name:                 "Read Secret Decrypt Error",
+			readVal:              secretVal,
+			decryptErr:           errors.New("DecryptError"),
+			encryptVal:           secretVal,
+			decryptVal:           notSecretVal,
+			secretKey:            password,
+			expectedResult:       "",
+			expectedError:        true,
+			numberOfCallsRead:    1,
+			numberOfCallsEncrypt: 1,
+			numberOfCallsDecrypt: 1,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ms := newMockStorage()
-			defer ms.AssertNumberOfCalls(t, read, tc.numberOfCallsR)
+			defer ms.AssertNumberOfCalls(t, read, tc.numberOfCallsRead)
 			ms.On(read, tc.readVal).Return(valFromStorage, tc.readErr)
 
 			me := newMockEncoder()
-			defer me.AssertNumberOfCalls(t, "Encrypt", tc.numberOfCallsE)
-			defer me.AssertNumberOfCalls(t, "Decrypt", tc.numberOfCallsD)
-			me.On("Encrypt", notSecretVal, ciphering.PassToSecretKey(password)).Return(secretVal, tc.encryptErr)
-			me.On("Decrypt", valFromStorage, ciphering.PassToSecretKey(password)).Return(notSecretVal, tc.decryptErr)
+			defer me.AssertNumberOfCalls(t, "Encrypt", tc.numberOfCallsEncrypt)
+			defer me.AssertNumberOfCalls(t, "Decrypt", tc.numberOfCallsDecrypt)
+			me.On("Encrypt", tc.decryptVal, ciphering.PassToSecretKey(tc.secretKey)).Return(tc.encryptVal, tc.encryptErr)
+			me.On("Decrypt", valFromStorage, ciphering.PassToSecretKey(tc.secretKey)).Return(tc.decryptVal, tc.decryptErr)
 
 			ss := New(ms, me, me)
-			result, err := ss.ReadSecret(notSecretVal, password)
+			result, err := ss.ReadSecret(tc.decryptVal, tc.secretKey)
 			if tc.expectedError {
 				require.Empty(t, result)
 				assert.Error(t, err)
 			} else {
 				require.NoError(t, err)
 				require.NotNil(t, result)
-				require.Equal(t, result, notSecretVal)
+				require.Equal(t, result, tc.decryptVal)
 			}
 		})
 	}
