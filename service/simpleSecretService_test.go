@@ -46,7 +46,8 @@ func TestSimpleSecretService_WriteSecret(t *testing.T) {
 	var testCases = []struct {
 		name                 string
 		encryptVal           string
-		encryptErr           error
+		encryptValueErr      error
+		encryptKeyErr        error
 		value                string
 		writeErr             error
 		secretKey            string
@@ -66,12 +67,34 @@ func TestSimpleSecretService_WriteSecret(t *testing.T) {
 			expectedErr:          false,
 		},
 		{
-			name:                 "Unsuccessful encrypt Write Secret",
+			name:                 "Unsuccessful Write Secret",
 			encryptVal:           secretVal,
 			secretKey:            password,
 			key:                  "key",
 			value:                notSecretVal,
-			encryptErr:           errors.New("encrypt Error"),
+			writeErr:             errors.New("Write Error"),
+			numberOfCallsWrite:   1,
+			numberOfCallsEncrypt: 2,
+			expectedErr:          true,
+		},
+		{
+			name:                 "Unsuccessful key encrypt",
+			encryptVal:           secretVal,
+			secretKey:            password,
+			encryptKeyErr:        errors.New("Key Encryption error"),
+			key:                  "key",
+			value:                notSecretVal,
+			numberOfCallsWrite:   0,
+			numberOfCallsEncrypt: 2,
+			expectedErr:          true,
+		},
+		{
+			name:                 "Unsuccessful value encrypt ",
+			encryptVal:           secretVal,
+			secretKey:            password,
+			key:                  "key",
+			value:                notSecretVal,
+			encryptValueErr:      errors.New("encrypt Error"),
 			numberOfCallsWrite:   0,
 			numberOfCallsEncrypt: 1,
 			expectedErr:          true,
@@ -81,8 +104,8 @@ func TestSimpleSecretService_WriteSecret(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			me := newMockEncoder()
 			defer me.AssertNumberOfCalls(t, "Encrypt", tc.numberOfCallsEncrypt)
-			me.On("Encrypt", tc.value, ciphering.PassToSecretKey(tc.secretKey)).Return(tc.encryptVal, tc.encryptErr)
-			me.On("Encrypt", tc.key, ciphering.PassToSecretKey(tc.secretKey)).Return(tc.encryptVal, tc.encryptErr)
+			me.On("Encrypt", tc.value, ciphering.PassToSecretKey(tc.secretKey)).Return(tc.encryptVal, tc.encryptValueErr)
+			me.On("Encrypt", tc.key, ciphering.PassToSecretKey(tc.secretKey)).Return(tc.encryptVal, tc.encryptKeyErr)
 
 			ms := newMockStorage()
 			defer ms.AssertNumberOfCalls(t, "Write", tc.numberOfCallsWrite)
