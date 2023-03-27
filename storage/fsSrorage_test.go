@@ -19,21 +19,21 @@ func TestRead(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			name:        "Key found in the file",
+			name:        "Reads data successfully",
 			key:         "foo",
 			fileContent: `{"foo": {"value": "bar"}}`,
 			expected:    "bar",
 			expectedErr: nil,
 		},
 		{
-			name:        "Empty key",
+			name:        "Reads data successfully when key is empty",
 			key:         "",
 			fileContent: `{"": {"value": "bar"}}`,
 			expected:    "bar",
 			expectedErr: nil,
 		},
 		{
-			name:        "Empty  value",
+			name:        "Reads data successfully when value is empty",
 			key:         "key",
 			fileContent: `{"key": {"value": ""}}`,
 			expected:    "",
@@ -41,7 +41,7 @@ func TestRead(t *testing.T) {
 		},
 
 		{
-			name:        "Key not found in the file",
+			name:        "Returns error when fails to find data attached to key",
 			path:        "",
 			key:         "non-existing-key",
 			fileContent: `{"foo": {"value": "bar"}}`,
@@ -49,7 +49,7 @@ func TestRead(t *testing.T) {
 			expectedErr: errors.New("item was not found"),
 		},
 		{
-			name:        "Invalid JSON format",
+			name:        "Returns error when fails due to the wrong json format",
 			path:        "",
 			key:         "foo",
 			fileContent: `invalid-json-format`,
@@ -57,7 +57,7 @@ func TestRead(t *testing.T) {
 			expectedErr: errors.New("invalid character "),
 		},
 		{
-			name:        "File not found",
+			name:        "Returns error when fails to find file",
 			path:        "/tmp/non_existing_path/ijrgopiasrais/pSDKF",
 			key:         "foo",
 			fileContent: "",
@@ -112,7 +112,7 @@ func TestWrite(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			name:        "valid case",
+			name:        "Writes data successfully",
 			path:        "",
 			key:         "validKeyNew",
 			Data:        `{"validKey": {"value": "validData"}}`,
@@ -121,7 +121,7 @@ func TestWrite(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "empty key",
+			name:        "writes data successfully when key is empty",
 			path:        "",
 			key:         "",
 			Data:        `{"": {"value": "validData"}}`,
@@ -130,7 +130,7 @@ func TestWrite(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "empty value",
+			name:        "writes data successfully when value is empty",
 			path:        "",
 			key:         "keynew",
 			Data:        `{"key": {"value": ""}}`,
@@ -139,7 +139,7 @@ func TestWrite(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "file was not found valid case",
+			name:        "writes data successfully when file was not found",
 			path:        "/tmp/data.json",
 			key:         "validKeyNew",
 			Data:        `{"validKey": {"value": "validData"}}`,
@@ -148,7 +148,7 @@ func TestWrite(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "corrupted path",
+			name:        "Returns error when fails to find and create file",
 			path:        "/trere/data.json",
 			key:         "validKeyNew",
 			Data:        `{"validKey": {"value": "validData"}}`,
@@ -157,7 +157,7 @@ func TestWrite(t *testing.T) {
 			expectedErr: errors.New("no such file or directory"),
 		},
 		{
-			name:        "json unmarshal error",
+			name:        "Returns error when fails to unmarshall data",
 			path:        "",
 			key:         "validKeyNew",
 			Data:        `invalid-json-format`,
@@ -191,7 +191,7 @@ func TestWrite(t *testing.T) {
 				if errRead != nil {
 					require.NoError(t, errRead)
 				}
-				require.Nil(t, err)
+				require.NoError(t, err)
 				require.Equal(t, tc.Value, result)
 			} else {
 				require.ErrorContains(t, err, tc.expectedErr.Error())

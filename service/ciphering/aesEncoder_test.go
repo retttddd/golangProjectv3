@@ -40,7 +40,7 @@ func TestAesEncoder_Encrypt(t *testing.T) {
 		nonceMock nonceProducer
 	}{
 		{
-			name:      "encryption valid case",
+			name:      "Encrypts data successfully",
 			source:    sourceString,
 			key:       key,
 			expected:  encryptedString,
@@ -48,7 +48,7 @@ func TestAesEncoder_Encrypt(t *testing.T) {
 			nonceMock: mockSuccessNonce,
 		},
 		{
-			name:      "encryption wrong key size",
+			name:      "Returns error when fails due to wrong key size",
 			source:    sourceString,
 			key:       wrongKey,
 			expected:  "",
@@ -56,7 +56,7 @@ func TestAesEncoder_Encrypt(t *testing.T) {
 			nonceMock: mockSuccessNonce,
 		},
 		{
-			name:      "encryption nonce generation fail",
+			name:      "Returns error when	nonce generation fails",
 			source:    sourceString,
 			key:       key,
 			expected:  "",
@@ -89,21 +89,21 @@ func TestAesEncoder_Decrypt(t *testing.T) {
 		expectErr bool
 	}{
 		{
-			name:      "valid case",
+			name:      "Decrypts data successfully",
 			encrypted: encryptedString,
 			key:       key,
 			expected:  sourceString,
 			expectErr: false,
 		},
 		{
-			name:      "wrong key size",
+			name:      "Returns error when fails due to wrong key size",
 			encrypted: encryptedString,
 			key:       "wrongkey",
 			expected:  "",
 			expectErr: true,
 		},
 		{
-			name:      "corrupted data",
+			name:      "Returns error when fails due to corrupted data",
 			encrypted: "zzz",
 			key:       key,
 			expected:  "",

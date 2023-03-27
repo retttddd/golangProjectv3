@@ -11,6 +11,7 @@ import (
 
 const notSecretVal = "decryptedValue"
 const secretVal = "encryptedValue"
+const encryptKey = "encryptedKey"
 const valFromStorage = "valueFromStorage"
 const password = "passwordIs32bytelongandOtherTxt"
 const read = "Read"
@@ -46,6 +47,7 @@ func TestSimpleSecretService_WriteSecret(t *testing.T) {
 	var testCases = []struct {
 		name                 string
 		encryptVal           string
+		encryptKey           string
 		encryptValueErr      error
 		encryptKeyErr        error
 		value                string
@@ -57,7 +59,7 @@ func TestSimpleSecretService_WriteSecret(t *testing.T) {
 		expectedErr          bool
 	}{
 		{
-			name:                 "Successful Write Secret",
+			name:                 "Writes data successfully",
 			encryptVal:           secretVal,
 			secretKey:            password,
 			key:                  "key",
@@ -65,31 +67,34 @@ func TestSimpleSecretService_WriteSecret(t *testing.T) {
 			numberOfCallsWrite:   1,
 			numberOfCallsEncrypt: 2,
 			expectedErr:          false,
+			encryptKey:           encryptKey,
 		},
 		{
-			name:                 "Unsuccessful Write Secret",
+			name:                 "Returns error when fails to write data",
 			encryptVal:           secretVal,
 			secretKey:            password,
 			key:                  "key",
 			value:                notSecretVal,
-			writeErr:             errors.New("Write Error"),
+			writeErr:             errors.New("write Error"),
 			numberOfCallsWrite:   1,
 			numberOfCallsEncrypt: 2,
 			expectedErr:          true,
+			encryptKey:           encryptKey,
 		},
 		{
-			name:                 "Unsuccessful key encrypt",
+			name:                 "Returns error when key is corrupted",
 			encryptVal:           secretVal,
 			secretKey:            password,
-			encryptKeyErr:        errors.New("Key Encryption error"),
+			encryptKeyErr:        errors.New("key Encryption error"),
 			key:                  "key",
 			value:                notSecretVal,
 			numberOfCallsWrite:   0,
 			numberOfCallsEncrypt: 2,
 			expectedErr:          true,
+			encryptKey:           encryptKey,
 		},
 		{
-			name:                 "Unsuccessful value encrypt ",
+			name:                 "Returns error when fails to encrypt",
 			encryptVal:           secretVal,
 			secretKey:            password,
 			key:                  "key",
@@ -98,6 +103,7 @@ func TestSimpleSecretService_WriteSecret(t *testing.T) {
 			numberOfCallsWrite:   0,
 			numberOfCallsEncrypt: 1,
 			expectedErr:          true,
+			encryptKey:           encryptKey,
 		},
 	}
 	for _, tc := range testCases {
@@ -105,11 +111,10 @@ func TestSimpleSecretService_WriteSecret(t *testing.T) {
 			me := newMockEncoder()
 			defer me.AssertNumberOfCalls(t, "Encrypt", tc.numberOfCallsEncrypt)
 			me.On("Encrypt", tc.value, ciphering.PassToSecretKey(tc.secretKey)).Return(tc.encryptVal, tc.encryptValueErr)
-			me.On("Encrypt", tc.key, ciphering.PassToSecretKey(tc.secretKey)).Return(tc.encryptVal, tc.encryptKeyErr)
-
+			me.On("Encrypt", tc.key, ciphering.PassToSecretKey(tc.secretKey)).Return(tc.encryptKey, tc.encryptKeyErr)
 			ms := newMockStorage()
 			defer ms.AssertNumberOfCalls(t, "Write", tc.numberOfCallsWrite)
-			ms.On("Write", tc.encryptVal, tc.encryptVal).Return(tc.writeErr)
+			ms.On("Write", tc.encryptKey, tc.encryptVal).Return(tc.writeErr)
 
 			ss := New(ms, me, me)
 			err := ss.WriteSecret("key", tc.value, tc.secretKey)
@@ -117,7 +122,7 @@ func TestSimpleSecretService_WriteSecret(t *testing.T) {
 				require.Error(t, err)
 
 			} else {
-				require.Nil(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -141,7 +146,7 @@ func TestSimpleSecretService_ReadSecret(t *testing.T) {
 		numberOfCallsDecrypt int
 	}{
 		{
-			name:                 "Successful Read Secret",
+			name:                 "Reads data successfully",
 			readVal:              secretVal,
 			encryptVal:           secretVal,
 			decryptVal:           notSecretVal,
@@ -153,7 +158,7 @@ func TestSimpleSecretService_ReadSecret(t *testing.T) {
 			numberOfCallsDecrypt: 1,
 		},
 		{
-			name:                 "Read Secret Encrypt Error",
+			name:                 "Returns error when fails to encrypt key",
 			readVal:              secretVal,
 			encryptVal:           secretVal,
 			encryptErr:           errors.New("encryptError"),
@@ -166,7 +171,7 @@ func TestSimpleSecretService_ReadSecret(t *testing.T) {
 			numberOfCallsDecrypt: 0,
 		},
 		{
-			name:                 "Read Secret read Error",
+			name:                 "Returns error when fails to read data",
 			readVal:              secretVal,
 			readErr:              errors.New("ReadError"),
 			encryptVal:           secretVal,
@@ -179,7 +184,7 @@ func TestSimpleSecretService_ReadSecret(t *testing.T) {
 			numberOfCallsDecrypt: 0,
 		},
 		{
-			name:                 "Read Secret Decrypt Error",
+			name:                 "Returns error when fails to decrypt read value",
 			readVal:              secretVal,
 			decryptErr:           errors.New("DecryptError"),
 			encryptVal:           secretVal,
