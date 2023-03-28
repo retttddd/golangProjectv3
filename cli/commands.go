@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"awesomeProject3/rest"
 	"awesomeProject3/service"
 	"awesomeProject3/service/ciphering"
 	"awesomeProject3/storage"
@@ -74,5 +75,19 @@ var get = &cobra.Command{
 		}
 		fmt.Println("decoded data:\n", value)
 		return nil
+	},
+}
+
+var server = &cobra.Command{
+	Use:   "server",
+	Short: "starts server",
+	Long:  "give 2 parameters: port filepath",
+	Run: func(cmd *cobra.Command, args []string) {
+		cReader := &constReader{}
+		secretService := service.New(storage.NewFsStorage("./data/test.json"),
+			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
+			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
+		srv := rest.NewHttpServer(secretService)
+		srv.Start()
 	},
 }
