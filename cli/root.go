@@ -16,6 +16,7 @@ var rootCmd = &cobra.Command{
 func Execute() error {
 	rootCmd.AddCommand(get)
 	rootCmd.AddCommand(set)
+	rootCmd.AddCommand(server)
 	set.Flags().StringP("key", "k", "", "key you use to identify data")
 	set.Flags().StringP("value", "v", "", "data you pass ")
 	set.Flags().StringP("cipher-key", "p", "", "cipher-key you use to make your data secret ")
