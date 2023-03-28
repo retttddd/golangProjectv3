@@ -3,13 +3,15 @@ package ciphering
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/rand"
 	"encoding/hex"
 	"errors"
-	"io"
 )
 
 type aesEncoder struct {
+	np nonceProducer
+}
+type nonceProducer interface {
+	generate(size int) (string, error)
 }
 
 func (en aesEncoder) Decrypt(ct string, aesKey []byte) (string, error) {
@@ -51,17 +53,20 @@ func (en aesEncoder) Encrypt(plaintext string, aesKey []byte) (encryptedText str
 		return "", err
 
 	}
-	nonce := make([]byte, gcm.NonceSize())
 
-	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
+	nonce, err := en.np.generate(gcm.NonceSize())
+
+	if err != nil {
 		return "", err
 	}
-	encryptedText = hex.EncodeToString(gcm.Seal(nonce, nonce, []byte(plaintext), nil))
+	encryptedText = hex.EncodeToString(gcm.Seal([]byte(nonce), []byte(nonce), []byte(plaintext), nil))
 	return encryptedText, nil
 
 }
 
-func NewAESEncoder() *aesEncoder {
+func NewAESEncoder(np nonceProducer) *aesEncoder {
 
-	return &aesEncoder{}
+	return &aesEncoder{
+		np,
+	}
 }
