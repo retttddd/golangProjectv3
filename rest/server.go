@@ -14,20 +14,24 @@ type container struct {
 
 type httpServer struct {
 	ssService service.SecretService
+	port      string
 }
 
-func NewHttpServer(sr service.SecretService) httpServer {
+func NewHttpServer(sr service.SecretService, portnumber string) httpServer {
 	return httpServer{
 		ssService: sr,
+		port:      portnumber,
 	}
 }
 
-func (sr *httpServer) Start() {
-	http.HandleFunc("/", sr.homePage)
-	log.Fatal(http.ListenAndServe(":10000", nil))
+func (sr *httpServer) Start() error {
+	http.HandleFunc("/", sr.handler)
+	log.Fatal(http.ListenAndServe("localhost:"+sr.port, nil))
+
+	return nil
 }
 
-func (sr *httpServer) homePage(w http.ResponseWriter, r *http.Request) {
+func (sr *httpServer) handler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		key := r.URL.Query().Get("getter")

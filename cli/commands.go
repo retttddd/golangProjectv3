@@ -40,7 +40,11 @@ var set = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		srv := service.New(storage.NewFsStorage("./data/test.json"),
+		path, err := cmd.Flags().GetString("path")
+		if err != nil {
+			return err
+		}
+		srv := service.New(storage.NewFsStorage(path),
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
 		if err := srv.WriteSecret(keys, value, cipherKey); err != nil {
@@ -66,7 +70,12 @@ var get = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		srv := service.New(storage.NewFsStorage("./data/test.json"),
+		path, err := cmd.Flags().GetString("path")
+		if err != nil {
+			return err
+		}
+
+		srv := service.New(storage.NewFsStorage(path),
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
 		value, err := srv.ReadSecret(keys, cipherKey)
@@ -81,13 +90,25 @@ var get = &cobra.Command{
 var server = &cobra.Command{
 	Use:   "server",
 	Short: "starts server",
-	Long:  "give 2 parameters: port filepath",
-	Run: func(cmd *cobra.Command, args []string) {
+	Long:  "give 2 parameters: port and filepath",
+	RunE: func(cmd *cobra.Command, args []string) error {
 		cReader := &constReader{}
-		secretService := service.New(storage.NewFsStorage("./data/test.json"),
+		port, err := cmd.Flags().GetString("port")
+		if err != nil {
+			return err
+		}
+		path, err := cmd.Flags().GetString("path")
+		if err != nil {
+			return err
+		}
+		secretService := service.New(storage.NewFsStorage(path),
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
-		srv := rest.NewHttpServer(secretService)
-		srv.Start()
+		srv := rest.NewHttpServer(secretService, port)
+		err = srv.Start()
+		if err != nil {
+			return err
+		}
+		return nil
 	},
 }
