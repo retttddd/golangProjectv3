@@ -104,11 +104,8 @@ var server = &cobra.Command{
 		secretService := service.New(storage.NewFsStorage(path),
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
-		srv := rest.NewHttpServer(secretService, port)
-		err = srv.Start()
-		if err != nil {
-			return err
-		}
+		srv := rest.NewSecretRestAPI(secretService, port)
+		srv.Start()
 		return nil
 	},
 }
