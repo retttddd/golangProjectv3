@@ -105,7 +105,10 @@ var server = &cobra.Command{
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
 		srv := rest.NewSecretRestAPI(secretService, port)
-		srv.Start()
+		err = srv.Start()
+		if err != nil {
+			return err
+		}
 		return nil
 	},
 }
