@@ -7,9 +7,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 )
 
@@ -28,29 +25,32 @@ type container struct {
 
 type SecretRestAPI struct {
 	ssService service.SecretService
-
-	port string
+	shutdown  chan struct{}
+	port      string
 }
 
 func NewSecretRestAPI(sr service.SecretService, portnumber string) *SecretRestAPI {
-	return &SecretRestAPI{port: portnumber, ssService: sr}
+	return &SecretRestAPI{port: portnumber, ssService: sr, shutdown: make(chan struct{}, 1)}
+}
+
+func (sr *SecretRestAPI) Stop() {
+	log.Println("started stop in the rest")
+	sr.shutdown <- struct{}{}
 }
 
 func (sr *SecretRestAPI) Start() error {
 	h := chi.NewRouter()
-	h.Method("GET", "/", Handler(sr.handlerGet))
-	h.Method("POST", "/", Handler(sr.handlerPost))
+	h.MethodFunc("GET", "/", sr.handlerGet)
+	h.MethodFunc("POST", "/", sr.handlerPost)
 
 	httpServer := &http.Server{Addr: ":" + sr.port, Handler: h}
 
 	serverCtx, serverStopCtx := context.WithCancel(context.Background())
 
-	sign := make(chan os.Signal, 1)
-	signal.Notify(sign, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	go func() {
-		<-sign
+		<-sr.shutdown
 		log.Println("got termination signal. Try to shutdown gracefully")
-		shutdownCtx, _ := context.WithTimeout(serverCtx, 30*time.Second)
+		shutdownCtx, shutDownStopCtx := context.WithTimeout(serverCtx, 30*time.Second)
 
 		err := httpServer.Shutdown(shutdownCtx)
 		if err != nil {
@@ -58,6 +58,7 @@ func (sr *SecretRestAPI) Start() error {
 
 		}
 		serverStopCtx()
+		shutDownStopCtx()
 
 	}()
 
@@ -68,41 +69,39 @@ func (sr *SecretRestAPI) Start() error {
 	log.Println("server stopped successfully")
 	<-serverCtx.Done()
 	log.Println("Done")
+
 	return nil
 }
 
-func (sr *SecretRestAPI) handlerGet(w http.ResponseWriter, r *http.Request) error {
+func (sr *SecretRestAPI) handlerGet(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Query().Get("getter")
-
 	result, err := sr.ssService.ReadSecret(key, r.Header.Get("X-Cipher"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
-		return nil
 	}
+	time.Sleep(11 * time.Second)
 	_, err = w.Write([]byte(result))
 	if nil != err {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return nil
 	}
-	return nil
+
 }
 
-func (sr *SecretRestAPI) handlerPost(w http.ResponseWriter, r *http.Request) error {
+func (sr *SecretRestAPI) handlerPost(w http.ResponseWriter, r *http.Request) {
 	var p container
 	err := json.NewDecoder(r.Body).Decode(&p)
 	//todo: in case missing key in body case assumes empty key value. must be fixed later
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return nil
+
 	}
 
 	err = sr.ssService.WriteSecret(p.Getter, p.Value, r.Header.Get("X-Cipher"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return nil
+
 	}
 
 	w.WriteHeader(http.StatusCreated)
 
-	return nil
 }

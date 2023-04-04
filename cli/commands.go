@@ -8,6 +8,10 @@ import (
 	"crypto/rand"
 	"fmt"
 	"github.com/spf13/cobra"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 type constReader struct {
@@ -104,11 +108,21 @@ var server = &cobra.Command{
 		secretService := service.New(storage.NewFsStorage(path),
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
+
+		sign := make(chan os.Signal, 1)
+		signal.Notify(sign, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
 		srv := rest.NewSecretRestAPI(secretService, port)
+
+		go func() {
+			<-sign
+			log.Println("got signal")
+
+			srv.Stop()
+
+		}()
 		err = srv.Start()
-		if err != nil {
-			return err
-		}
-		return nil
+
+		return err
 	},
 }
