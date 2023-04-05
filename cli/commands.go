@@ -5,6 +5,7 @@ import (
 	"awesomeProject3/service"
 	"awesomeProject3/service/ciphering"
 	"awesomeProject3/storage"
+	"context"
 	"crypto/rand"
 	"fmt"
 	"github.com/spf13/cobra"
@@ -113,16 +114,17 @@ var server = &cobra.Command{
 		signal.Notify(sign, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 		srv := rest.NewSecretRestAPI(secretService, port)
-
+		serverCtx, serverStopCtx := context.WithCancel(context.Background())
 		go func() {
 			<-sign
 			log.Println("got signal")
 
 			srv.Stop()
-
+			serverStopCtx()
 		}()
-		err = srv.Start()
-
+		err = srv.Start(serverCtx)
+		<-serverCtx.Done()
+		log.Println("Done")
 		return err
 	},
 }
