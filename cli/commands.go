@@ -114,7 +114,7 @@ var server = &cobra.Command{
 		signal.Notify(sign, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 		srv := rest.NewSecretRestAPI(secretService, port)
-		serverCtx, serverStopCtx := context.WithCancel(context.Background())
+		serverCtx, serverCancel := context.WithCancel(cmd.Context())
 		go func() {
 			<-sign
 			log.Println("got signal")
