@@ -116,14 +116,15 @@ var server = &cobra.Command{
 		srv := rest.NewSecretRestAPI(secretService, port)
 		serverCtx, serverCancel := context.WithCancel(cmd.Context())
 		go func() {
-			<-sign
-			log.Println("got signal")
-
-			srv.Stop()
-			serverStopCtx()
+			defer signal.Stop(sign)
+                        defer serverCancel()
+                        
+                        select {
+                        case <-sign:
+                        case <-serverCtx.Done():
+                        }
 		}()
 		err = srv.Start(serverCtx)
-		<-serverCtx.Done()
 		log.Println("Done")
 		return err
 	},
