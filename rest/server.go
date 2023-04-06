@@ -32,33 +32,44 @@ func (sr *SecretRestAPI) Stop() {
 	<-sr.shutdownComplete
 }
 
-func (sr *SecretRestAPI) Start(serverCtx context.Context) error {
+func (sr *SecretRestAPI) Start(ctx context.Context) error {
 	h := chi.NewRouter()
 	h.MethodFunc("GET", "/", sr.handlerGet)
 	h.MethodFunc("POST", "/", sr.handlerPost)
 
 	httpServer := &http.Server{Addr: ":" + sr.port, Handler: h}
+	
+	var wg sync.WaitGroup
+	wg.Add(2)
+	
+	var err error
+	
+	go func() {
+	     defer wg.Done()
+	     srvErr := httpServer.ListenAndServe()
+	     if srvErr != nil && srvErr != http.ErrServerClosed {
+		    err = srvErr
+	     }
+	}()
 
 	go func() {
-		<-sr.shutdown
+	       defer wg.Done()
+		<-ctx.Done()
 		log.Println("Try to shutdown gracefully")
-		shutdownCtx, shutDownStopCtx := context.WithTimeout(serverCtx, 5*time.Second)
+		shutdownCtx, shutDownStopCtx := context.WithTimeout(context.Background(), 5*time.Second)
 		defer shutDownStopCtx()
 		err := httpServer.Shutdown(shutdownCtx)
 		if err != nil {
 			log.Println("Error trying to shutdown server. Error: ", err)
-
 		}
-
-		sr.shutdownComplete <- struct{}{}
 	}()
 
-	err := httpServer.ListenAndServe()
-	if err != nil && err != http.ErrServerClosed {
-		return err
-	}
-	log.Println("HTTP Server stopped successfully")
-
+        wg.Wait()
+        log.Println("HTTP Server stopped successfully")
+        if err != nil {
+            return err
+        }
+        
 	return nil
 }
 
