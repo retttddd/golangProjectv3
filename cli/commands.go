@@ -110,19 +110,18 @@ var server = &cobra.Command{
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
 
-		sign := make(chan os.Signal, 1)
-		signal.Notify(sign, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-
 		srv := rest.NewSecretRestAPI(secretService, port)
 		serverCtx, serverCancel := context.WithCancel(cmd.Context())
 		go func() {
+			sign := make(chan os.Signal, 1)
+			signal.Notify(sign, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 			defer signal.Stop(sign)
-                        defer serverCancel()
-                        
-                        select {
-                        case <-sign:
-                        case <-serverCtx.Done():
-                        }
+			defer serverCancel()
+
+			select {
+			case <-sign:
+			case <-serverCtx.Done():
+			}
 		}()
 		err = srv.Start(serverCtx)
 		log.Println("Done")
