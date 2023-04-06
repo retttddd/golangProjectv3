@@ -123,7 +123,9 @@ var server = &cobra.Command{
 			case <-serverCtx.Done():
 			}
 		}()
+
 		err = srv.Start(serverCtx)
+
 		log.Println("Done")
 		return err
 	},

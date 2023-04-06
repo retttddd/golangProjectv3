@@ -17,20 +17,12 @@ type container struct {
 }
 
 type SecretRestAPI struct {
-	ssService        service.SecretService
-	shutdown         chan struct{}
-	shutdownComplete chan struct{}
-	port             string
+	ssService service.SecretService
+	port      string
 }
 
 func NewSecretRestAPI(sr service.SecretService, portnumber string) *SecretRestAPI {
-	return &SecretRestAPI{port: portnumber, ssService: sr, shutdown: make(chan struct{}, 1), shutdownComplete: make(chan struct{}, 1)}
-}
-
-func (sr *SecretRestAPI) Stop() {
-	log.Println("started stop in the rest")
-	sr.shutdown <- struct{}{}
-	<-sr.shutdownComplete
+	return &SecretRestAPI{port: portnumber, ssService: sr}
 }
 
 func (sr *SecretRestAPI) Start(ctx context.Context) error {
@@ -81,7 +73,6 @@ func (sr *SecretRestAPI) handlerGet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	time.Sleep(8 * time.Second)
 	_, err = w.Write([]byte(result))
 	if nil != err {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -93,7 +84,6 @@ func (sr *SecretRestAPI) handlerGet(w http.ResponseWriter, r *http.Request) {
 func (sr *SecretRestAPI) handlerPost(w http.ResponseWriter, r *http.Request) {
 	var p container
 	err := json.NewDecoder(r.Body).Decode(&p)
-	//todo: in case missing key in body case assumes empty key value. must be fixed later
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
