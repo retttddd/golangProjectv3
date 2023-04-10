@@ -16,10 +16,15 @@ var rootCmd = &cobra.Command{
 func Execute() error {
 	rootCmd.AddCommand(get)
 	rootCmd.AddCommand(set)
+	rootCmd.AddCommand(server)
+	server.Flags().StringP("port", "o", "", "port you use to start server")
+	server.Flags().StringP("path", "a", "", "path you use to store data")
 	set.Flags().StringP("key", "k", "", "key you use to identify data")
 	set.Flags().StringP("value", "v", "", "data you pass ")
 	set.Flags().StringP("cipher-key", "p", "", "cipher-key you use to make your data secret ")
+	set.Flags().StringP("path", "a", "", "path you use to store data")
 	get.Flags().StringP("key", "k", "", "key you use to identify data")
 	get.Flags().StringP("cipher-key", "p", "", "cipher-key you use to make your data secret ")
+	get.Flags().StringP("path", "a", "", "path you use to store data")
 	return rootCmd.Execute()
 }

@@ -1,12 +1,18 @@
 package cli
 
 import (
+	"awesomeProject3/rest"
 	"awesomeProject3/service"
 	"awesomeProject3/service/ciphering"
 	"awesomeProject3/storage"
+	"context"
 	"crypto/rand"
 	"fmt"
 	"github.com/spf13/cobra"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 type constReader struct {
@@ -39,7 +45,11 @@ var set = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		srv := service.New(storage.NewFsStorage("./data/test.json"),
+		path, err := cmd.Flags().GetString("path")
+		if err != nil {
+			return err
+		}
+		srv := service.New(storage.NewFsStorage(path),
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
 		if err := srv.WriteSecret(keys, value, cipherKey); err != nil {
@@ -65,7 +75,12 @@ var get = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		srv := service.New(storage.NewFsStorage("./data/test.json"),
+		path, err := cmd.Flags().GetString("path")
+		if err != nil {
+			return err
+		}
+
+		srv := service.New(storage.NewFsStorage(path),
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
 		value, err := srv.ReadSecret(keys, cipherKey)
@@ -74,5 +89,44 @@ var get = &cobra.Command{
 		}
 		fmt.Println("decoded data:\n", value)
 		return nil
+	},
+}
+
+var server = &cobra.Command{
+	Use:   "server",
+	Short: "starts server",
+	Long:  "give 2 parameters: port and filepath",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cReader := &constReader{}
+		port, err := cmd.Flags().GetString("port")
+		if err != nil {
+			return err
+		}
+		path, err := cmd.Flags().GetString("path")
+		if err != nil {
+			return err
+		}
+		secretService := service.New(storage.NewFsStorage(path),
+			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
+			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
+
+		srv := rest.NewSecretRestAPI(secretService, port)
+		serverCtx, serverCancel := context.WithCancel(cmd.Context())
+		go func() {
+			sign := make(chan os.Signal, 1)
+			signal.Notify(sign, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+			defer signal.Stop(sign)
+			defer serverCancel()
+
+			select {
+			case <-sign:
+			case <-serverCtx.Done():
+			}
+		}()
+
+		err = srv.Start(serverCtx)
+
+		log.Println("Done")
+		return err
 	},
 }
