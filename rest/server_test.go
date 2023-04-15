@@ -193,7 +193,7 @@ func TestSecretRestAPI_Post(t *testing.T) {
 			jsonBody := []byte(tt.jBody)
 			bodyReader := bytes.NewReader(jsonBody)
 
-			req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://localhost:%s?getter=key", serverPort), bodyReader)
+			req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://localhost:%s?getter=%s", serverPort, tt.key), bodyReader)
 			req.Header.Set("X-Cipher", "password")
 
 			client := http.Client{
