@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"net"
 	"net/http"
 	"strconv"
 	"testing"
@@ -27,6 +28,25 @@ func (m *mockSecretService) ReadSecret(key string, password string) (string, err
 func (m *mockSecretService) WriteSecret(key string, value string, password string) error {
 	arg := m.Called(key, value, password)
 	return arg.Error(0)
+}
+
+func CheckPort() (string, error) {
+	for i := 0; i < 20; i++ {
+
+		port := rand.Intn(20000-10000) + 10000
+		address := "localhost:" + strconv.Itoa(port)
+		log.Println("start port check")
+		conn, err := net.DialTimeout("tcp", address, 2*time.Second)
+		if conn != nil {
+			conn.Close()
+		}
+		if err != nil {
+			log.Println("connection failed port is ok")
+			return strconv.Itoa(port), nil
+
+		}
+	}
+	return "", errors.New("cant find emptey port")
 }
 
 func TestSecretRestAPI_Get(t *testing.T) {
@@ -78,7 +98,10 @@ func TestSecretRestAPI_Get(t *testing.T) {
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			log.Println(tt.name)
-			serverPort := strconv.Itoa(rand.Intn(20000-10000) + 10000)
+			serverPort, err := CheckPort()
+			if err != nil {
+				panic("sdfsdf")
+			}
 			mockSecretService := newMockSecretService()
 			mockSecretService.On("ReadSecret", tt.mockInput.key, tt.mockInput.password).Return(tt.mockOutput.result, tt.mockOutput.err)
 			srv := NewSecretRestAPI(mockSecretService, serverPort)
@@ -102,6 +125,7 @@ func TestSecretRestAPI_Get(t *testing.T) {
 			responseData, _ := ioutil.ReadAll(res.Body)
 			require.Equal(t, tt.expectedBody, string(responseData))
 			require.Equal(t, tt.expectedCode, res.StatusCode)
+			log.Println("test case finalized" + tt.name)
 		})
 	}
 }
@@ -135,7 +159,7 @@ func TestSecretRestAPI_Post(t *testing.T) {
 			key:           "key",
 			password:      "password",
 			jBody:         `{sdasdadasdad""||";;;"}`,
-			expectedCode:  http.StatusInternalServerError,
+			expectedCode:  http.StatusBadRequest,
 			expectedError: nil,
 			expectedBody:  "invalid character",
 		},
@@ -153,7 +177,10 @@ func TestSecretRestAPI_Post(t *testing.T) {
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			log.Println(tt.name)
-			serverPort := strconv.Itoa(rand.Intn(20000-10000) + 10000)
+			serverPort, err := CheckPort()
+			if err != nil {
+				panic("sdfsdf")
+			}
 			mockSecretService := newMockSecretService()
 			mockSecretService.On("WriteSecret", tt.key, tt.value, tt.password).Return(tt.expectedError)
 			srv := NewSecretRestAPI(mockSecretService, serverPort)

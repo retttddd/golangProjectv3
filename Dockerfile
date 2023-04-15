@@ -8,7 +8,7 @@ COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 
 COPY . .
-RUN go build -v -o /usr/local/bin/secret awesomeProject3
+RUN go build -v -o /usr/local/bin/secret main.go
 
 EXPOSE 10000
 
