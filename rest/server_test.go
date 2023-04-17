@@ -100,11 +100,13 @@ func TestSecretRestAPI_Get(t *testing.T) {
 			log.Println(tt.name)
 			serverPort, err := CheckPort()
 			if err != nil {
-				panic("sdfsdf")
+				require.FailNow(t, "could not get port to perform a test", err)
+				return
 			}
 			mockSecretService := newMockSecretService()
 			mockSecretService.On("ReadSecret", tt.mockInput.key, tt.mockInput.password).Return(tt.mockOutput.result, tt.mockOutput.err)
 			srv := NewSecretRestAPI(mockSecretService, serverPort)
+			defer mockSecretService.AssertExpectations(t)
 			serverCtx, serverCancel := context.WithCancel(context.Background())
 			defer serverCancel()
 			go func() {
@@ -141,6 +143,7 @@ func TestSecretRestAPI_Post(t *testing.T) {
 		expectedCode  int
 		expectedBody  string
 		expectedError error
+		isServiceCall bool
 	}{
 
 		{
@@ -152,6 +155,7 @@ func TestSecretRestAPI_Post(t *testing.T) {
 			expectedCode:  http.StatusCreated,
 			expectedError: nil,
 			expectedBody:  "",
+			isServiceCall: true,
 		},
 		{
 			name:          "Returns error when fails to process corrupted json",
@@ -162,6 +166,7 @@ func TestSecretRestAPI_Post(t *testing.T) {
 			expectedCode:  http.StatusBadRequest,
 			expectedError: nil,
 			expectedBody:  "invalid character",
+			isServiceCall: false,
 		},
 		{
 			name:          "Returns error when fails to process mocked method",
@@ -172,6 +177,7 @@ func TestSecretRestAPI_Post(t *testing.T) {
 			expectedCode:  http.StatusInternalServerError,
 			expectedError: errors.New("Error while performing write method"),
 			expectedBody:  "Error while performing write method\n",
+			isServiceCall: true,
 		},
 	}
 	for _, tt := range testCases {
@@ -179,10 +185,12 @@ func TestSecretRestAPI_Post(t *testing.T) {
 			log.Println(tt.name)
 			serverPort, err := CheckPort()
 			if err != nil {
-				panic("sdfsdf")
+				require.FailNow(t, "could not get port to perform a test", err)
+				return
 			}
 			mockSecretService := newMockSecretService()
 			mockSecretService.On("WriteSecret", tt.key, tt.value, tt.password).Return(tt.expectedError)
+
 			srv := NewSecretRestAPI(mockSecretService, serverPort)
 			serverCtx, serverCancel := context.WithCancel(context.Background())
 			defer serverCancel()
@@ -204,6 +212,11 @@ func TestSecretRestAPI_Post(t *testing.T) {
 			require.Contains(t, string(responseData), tt.expectedBody)
 			require.Equal(t, tt.expectedCode, res.StatusCode)
 			require.NoError(t, err)
+			if tt.isServiceCall {
+				mockSecretService.AssertExpectations(t)
+			} else {
+				mockSecretService.AssertNotCalled(t, "WriteSecret")
+			}
 
 		})
 	}

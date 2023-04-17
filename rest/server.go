@@ -11,6 +11,10 @@ import (
 	"time"
 )
 
+type errBox struct {
+	Value string `value:"error"`
+}
+
 type container struct {
 	Getter string `json:"getter"`
 	Value  string `json:"value"`
