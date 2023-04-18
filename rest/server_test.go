@@ -77,7 +77,7 @@ func TestSecretRestAPI_Get(t *testing.T) {
 				err:    nil,
 			},
 			expectedCode:  http.StatusOK,
-			expectedBody:  "value",
+			expectedBody:  `{"value":"value"}`,
 			expectedError: nil,
 		},
 		{
@@ -88,10 +88,11 @@ func TestSecretRestAPI_Get(t *testing.T) {
 			},
 			mockOutput: mockOutput{
 				result: "",
-				err:    errors.New("error"),
+				err:    errors.New("error in mocked method"),
 			},
-			expectedCode:  http.StatusNotFound,
-			expectedBody:  "error\n",
+			expectedCode: http.StatusNotFound,
+			expectedBody: `{"error":"error in mocked method"}
+`,
 			expectedError: nil,
 		},
 	}
@@ -176,7 +177,8 @@ func TestSecretRestAPI_Post(t *testing.T) {
 			jBody:         `{"getter" : "key", "value" : "value"}`,
 			expectedCode:  http.StatusInternalServerError,
 			expectedError: errors.New("Error while performing write method"),
-			expectedBody:  "Error while performing write method\n",
+			expectedBody: `{"error":"Error while performing write method"}
+`,
 			isServiceCall: true,
 		},
 	}

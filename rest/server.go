@@ -11,10 +11,12 @@ import (
 	"time"
 )
 
-type errBox struct {
-	Value string `value:"error"`
+type responseBodyErr struct {
+	Error string `json:"error"`
 }
-
+type responseBodyValue struct {
+	Value string `json:"value"`
+}
 type container struct {
 	Getter string `json:"getter"`
 	Value  string `json:"value"`
@@ -70,16 +72,42 @@ func (sr *SecretRestAPI) Start(ctx context.Context) error {
 	return nil
 }
 
+func jsonWriter(err error, value string, errorFunc func(error)) string {
+	if err != nil {
+		errorMsgJson, err := json.Marshal(responseBodyErr{Error: err.Error()})
+		if err != nil {
+			errorFunc(err)
+		}
+		return string(errorMsgJson)
+	} else {
+		valueJson, err := json.Marshal(responseBodyValue{Value: value})
+		if err != nil {
+			errorFunc(err)
+		}
+		return string(valueJson)
+	}
+}
+
 func (sr *SecretRestAPI) handlerGet(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Query().Get("getter")
 	result, err := sr.ssService.ReadSecret(key, r.Header.Get("X-Cipher"))
+	resultMsgJson := jsonWriter(err, result, func(err2 error) {
+		http.Error(w, "error:"+err2.Error(), http.StatusInternalServerError)
+	})
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		errorMsgJson := jsonWriter(err, "", func(err2 error) {
+			http.Error(w, "error:"+err2.Error(), http.StatusInternalServerError)
+		})
+		http.Error(w, errorMsgJson, http.StatusNotFound)
 		return
 	}
-	_, err = w.Write([]byte(result))
+
+	_, err = w.Write([]byte(resultMsgJson))
 	if nil != err {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		errorMsgJson := jsonWriter(err, "", func(err2 error) {
+			http.Error(w, "error:"+err2.Error(), http.StatusInternalServerError)
+		})
+		http.Error(w, errorMsgJson, http.StatusBadRequest)
 		return
 	}
 
@@ -89,13 +117,19 @@ func (sr *SecretRestAPI) handlerPost(w http.ResponseWriter, r *http.Request) {
 	var p container
 	err := json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		errorMsgJson := jsonWriter(err, "", func(err2 error) {
+			http.Error(w, "error:"+err2.Error(), http.StatusInternalServerError)
+		})
+		http.Error(w, errorMsgJson, http.StatusBadRequest)
 		return
 	}
 
 	err = sr.ssService.WriteSecret(p.Getter, p.Value, r.Header.Get("X-Cipher"))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		errorMsgJson := jsonWriter(err, "", func(err2 error) {
+			http.Error(w, "error:"+err2.Error(), http.StatusInternalServerError)
+		})
+		http.Error(w, errorMsgJson, http.StatusInternalServerError)
 		return
 	}
 
