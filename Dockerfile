@@ -14,7 +14,7 @@ COPY storage ./storage
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o /secret
 
-FROM  alpine:latest AS build-release-stage
+FROM  alpine:latest AS build-release-stage 
 
 WORKDIR /
 VOLUME /data
