@@ -7,6 +7,7 @@ import (
 	"awesomeProject3/storage"
 	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
 	"log"
@@ -102,14 +103,26 @@ var server = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		var secretService service.SecretService
+		dbUrl, err := cmd.Flags().GetString("database")
+		if err != nil {
+			return err
+		}
 		path, err := cmd.Flags().GetString("path")
 		if err != nil {
 			return err
 		}
-		secretService := service.New(storage.NewFsStorage(path),
-			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
-			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
-
+		if dbUrl != "" && path == "" {
+			secretService = service.New(storage.NewDbStorage(dbUrl),
+				ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
+				ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
+		} else if dbUrl == "" && path != "" {
+			secretService = service.New(storage.NewFsStorage(path),
+				ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
+				ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
+		} else {
+			return errors.New("inconsistend parametr list")
+		}
 		srv := rest.NewSecretRestAPI(secretService, port)
 		serverCtx, serverCancel := context.WithCancel(cmd.Context())
 		go func() {

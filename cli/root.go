@@ -19,6 +19,7 @@ func Execute() error {
 	rootCmd.AddCommand(server)
 	server.Flags().StringP("port", "o", "", "port you use to start server")
 	server.Flags().StringP("path", "a", "", "path you use to store data")
+	server.Flags().StringP("database", "x", "", "add url to your database")
 	set.Flags().StringP("key", "k", "", "key you use to identify data")
 	set.Flags().StringP("value", "v", "", "data you pass ")
 	set.Flags().StringP("cipher-key", "p", "", "cipher-key you use to make your data secret ")
