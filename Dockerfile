@@ -19,6 +19,7 @@ FROM  alpine:latest AS build-release-stage
 
 WORKDIR /
 VOLUME /data
+COPY scripts ./scripts
 COPY --from=build-stage /secret /secret
 
 EXPOSE 10000

@@ -2,6 +2,9 @@ package storage
 
 import (
 	"errors"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"log"
@@ -17,6 +20,15 @@ type dbStorage struct {
 }
 
 func NewDbStorage(url string) *dbStorage {
+	m, err := migrate.New(
+		"file://./scripts/migration",
+		url)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := m.Up(); err != nil {
+		log.Fatal(err)
+	}
 	dbConnection, err := sqlx.Connect("postgres", url)
 	if err != nil {
 		log.Fatalln(err)
