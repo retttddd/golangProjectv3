@@ -9,9 +9,9 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - /home/jan/data/postgres:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
   secret:
-    image: s570db
+    image: s888db
     ports:
       - '10000:10000'
     command:

@@ -26,7 +26,7 @@ func NewDbStorage(url string) *dbStorage {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := m.Up(); err != nil {
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		log.Fatal(err)
 	}
 	dbConnection, err := sqlx.Connect("postgres", url)
