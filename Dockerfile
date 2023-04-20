@@ -16,10 +16,11 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /secret
 
 FROM  alpine:latest AS build-release-stage 
 
+
 WORKDIR /
 VOLUME /data
 COPY --from=build-stage /secret /secret
 
 EXPOSE 10000
 
-CMD ["/secret", "server", "-a=/data/test.json", "-o=10000"]
+ENTRYPOINT ["/secret"]
