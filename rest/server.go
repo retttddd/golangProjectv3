@@ -5,7 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
 	"log"
+	"moul.io/chizap"
 	"net/http"
 	"sync"
 	"time"
@@ -33,6 +35,12 @@ func NewSecretRestAPI(sr service.SecretService, portnumber string) *SecretRestAP
 
 func (sr *SecretRestAPI) Start(ctx context.Context) error {
 	h := chi.NewRouter()
+	logger := zap.NewExample()
+	h.Use(chizap.New(logger, &chizap.Opts{
+		WithReferer:   true,
+		WithUserAgent: true,
+	}))
+	h.MethodFunc("GET", "/health", sr.handlerHealth)
 	h.MethodFunc("GET", "/", sr.handlerGet)
 	h.MethodFunc("POST", "/", sr.handlerPost)
 
@@ -135,4 +143,15 @@ func (sr *SecretRestAPI) handlerPost(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 
+}
+func (sr *SecretRestAPI) handlerHealth(w http.ResponseWriter, _ *http.Request) {
+	resultMsgJson := "OK"
+	_, err := w.Write([]byte(resultMsgJson))
+	if nil != err {
+		errorMsgJson := jsonWriter(err, "", func(err2 error) {
+			http.Error(w, "error:"+err2.Error(), http.StatusInternalServerError)
+		})
+		http.Error(w, errorMsgJson, http.StatusBadRequest)
+		return
+	}
 }

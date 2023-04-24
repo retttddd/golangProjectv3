@@ -17,6 +17,8 @@ func Execute() error {
 	rootCmd.AddCommand(get)
 	rootCmd.AddCommand(set)
 	rootCmd.AddCommand(server)
+	rootCmd.AddCommand(healthcheck)
+	healthcheck.Flags().StringP("port", "o", "", "port you use to start server")
 	server.Flags().StringP("port", "o", "", "port you use to start server")
 	server.Flags().StringP("path", "a", "", "path you use to store data")
 	server.Flags().StringP("database", "x", "", "add url to your database")

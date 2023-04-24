@@ -1,6 +1,7 @@
 package cli
 
 import (
+	health "awesomeProject3/healthcheck"
 	"awesomeProject3/rest"
 	"awesomeProject3/service"
 	"awesomeProject3/service/ciphering"
@@ -90,6 +91,18 @@ var get = &cobra.Command{
 		}
 		fmt.Println("decoded data:\n", value)
 		return nil
+	},
+}
+var healthcheck = &cobra.Command{
+	Use:   "healthcheck",
+	Short: "checks health",
+	Long:  "give 2 parameters: key password",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		port, err := cmd.Flags().GetString("port")
+		if err != nil {
+			return err
+		}
+		return health.Check(port)
 	},
 }
 

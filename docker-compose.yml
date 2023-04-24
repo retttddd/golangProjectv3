@@ -6,15 +6,27 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=mypassword
+      - POSTGRES_DB=secret_db
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-d", "secret_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     ports:
       - '5432:5432'
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
   secret:
-    image: s888db
+    depends_on:
+        - db
+    restart: always
+    image: cz100db1
     ports:
       - '10000:10000'
+    environment:
+      - PORT=10000
     command:
       - "server"
       - "-x=postgresql://postgres:mypassword@db:5432/secret_db?sslmode=disable"
       - "-o=10000"
+
