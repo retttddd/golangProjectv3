@@ -67,7 +67,6 @@ func TestRead(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			//using tc.path != "" for test cases which do not need created file
 			var targetFilePath string
 			if tc.path == "" {
 

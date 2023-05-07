@@ -1,12 +1,14 @@
 package cli
 
 import (
+	health "awesomeProject3/healthcheck"
 	"awesomeProject3/rest"
 	"awesomeProject3/service"
 	"awesomeProject3/service/ciphering"
 	"awesomeProject3/storage"
 	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
 	"log"
@@ -91,6 +93,18 @@ var get = &cobra.Command{
 		return nil
 	},
 }
+var healthcheck = &cobra.Command{
+	Use:   "healthcheck",
+	Short: "checks health",
+	Long:  "give 2 parameters: key password",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		port, err := cmd.Flags().GetString("port")
+		if err != nil {
+			return err
+		}
+		return health.Check(port)
+	},
+}
 
 var server = &cobra.Command{
 	Use:   "server",
@@ -102,14 +116,26 @@ var server = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		var secretService service.SecretService
+		dbUrl, err := cmd.Flags().GetString("database")
+		if err != nil {
+			return err
+		}
 		path, err := cmd.Flags().GetString("path")
 		if err != nil {
 			return err
 		}
-		secretService := service.New(storage.NewFsStorage(path),
-			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
-			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
-
+		if dbUrl != "" && path == "" {
+			secretService = service.New(storage.NewDbStorage(dbUrl),
+				ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
+				ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
+		} else if dbUrl == "" && path != "" {
+			secretService = service.New(storage.NewFsStorage(path),
+				ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
+				ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
+		} else {
+			return errors.New("inconsistend parametr list")
+		}
 		srv := rest.NewSecretRestAPI(secretService, port)
 		serverCtx, serverCancel := context.WithCancel(cmd.Context())
 		go func() {

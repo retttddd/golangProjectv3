@@ -5,11 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
+	"log"
 	"math/rand"
+	"net"
 	"net/http"
 	"strconv"
 	"testing"
@@ -29,131 +30,196 @@ func (m *mockSecretService) WriteSecret(key string, value string, password strin
 	return arg.Error(0)
 }
 
-func TestSecretRestAPI_Get_Success(t *testing.T) {
-	serverPort := strconv.Itoa(rand.Intn(20000-10000) + 10000)
-	mockSecretService := newMockSecretService()
-	mockSecretService.On("ReadSecret", "key", "password").Return("value", nil)
-	srv := NewSecretRestAPI(mockSecretService, serverPort)
-	serverCtx, serverCancel := context.WithCancel(context.Background())
-	defer serverCancel()
-	go func() {
-		srv.Start(serverCtx)
-	}()
-	time.Sleep(1 * time.Second)
-	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("http://localhost:%s?getter=key", serverPort), nil)
-	req.Header.Set("X-Cipher", "password")
-	client := http.Client{
-		Timeout: 5 * time.Second,
+func CheckPort() (string, error) {
+	for i := 0; i < 20; i++ {
+
+		port := rand.Intn(20000-10000) + 10000
+		address := "localhost:" + strconv.Itoa(port)
+		log.Println("start port check")
+		conn, err := net.DialTimeout("tcp", address, 2*time.Second)
+		if conn != nil {
+			conn.Close()
+		}
+		if err != nil {
+			log.Println("connection failed port is ok")
+			return strconv.Itoa(port), nil
+
+		}
 	}
-	res, err := client.Do(req)
-	responseData, _ := ioutil.ReadAll(res.Body)
-	assert.Equal(t, "value", string(responseData))
-	assert.Equal(t, http.StatusOK, res.StatusCode)
-	require.NoError(t, err)
-
-}
-func TestSecretRestAPI_Get_Error(t *testing.T) {
-	serverPort := strconv.Itoa(rand.Intn(20000-10000) + 10000)
-	mockSecretService := newMockSecretService()
-	mockSecretService.On("ReadSecret", "key", "password").Return("", errors.New("error"))
-	srv := NewSecretRestAPI(mockSecretService, serverPort)
-	serverCtx, serverCancel := context.WithCancel(context.Background())
-	defer serverCancel()
-	go func() {
-		srv.Start(serverCtx)
-	}()
-	time.Sleep(1 * time.Second)
-	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("http://localhost:%s?getter=key", serverPort), nil)
-	req.Header.Set("X-Cipher", "password")
-	client := http.Client{
-		Timeout: 5 * time.Second,
-	}
-	res, err := client.Do(req)
-	responseData, _ := ioutil.ReadAll(res.Body)
-	assert.Equal(t, "error\n", string(responseData))
-	assert.Equal(t, http.StatusNotFound, res.StatusCode)
-	require.NoError(t, err)
-
-}
-func TestSecretRestAPI_Post_Success(t *testing.T) {
-	serverPort := strconv.Itoa(rand.Intn(20000-10000) + 10000)
-	mockSecretService := newMockSecretService()
-	mockSecretService.On("WriteSecret", "key", "value", "password").Return(nil)
-	srv := NewSecretRestAPI(mockSecretService, serverPort)
-	serverCtx, serverCancel := context.WithCancel(context.Background())
-	defer serverCancel()
-	go func() {
-		srv.Start(serverCtx)
-	}()
-	time.Sleep(1 * time.Second)
-	jsonBody := []byte(`{"getter" : "key", "value" : "value"}`)
-	bodyReader := bytes.NewReader(jsonBody)
-
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://localhost:%s?getter=key", serverPort), bodyReader)
-	req.Header.Set("X-Cipher", "password")
-
-	client := http.Client{
-		Timeout: 5 * time.Second,
-	}
-	res, err := client.Do(req)
-	responseData, _ := ioutil.ReadAll(res.Body)
-	require.Empty(t, string(responseData))
-	require.Equal(t, http.StatusCreated, res.StatusCode) // create all the same
-	require.NoError(t, err)
-
+	return "", errors.New("cant find emptey port")
 }
 
-func TestSecretRestAPI_Post_FailedToDecodeJSON(t *testing.T) {
-	serverPort := strconv.Itoa(rand.Intn(20000-10000) + 10000)
-	mockSecretService := newMockSecretService()
-	mockSecretService.On("WriteSecret", "key", "value", "password").Return(nil)
-	srv := NewSecretRestAPI(mockSecretService, serverPort)
-	serverCtx, serverCancel := context.WithCancel(context.Background())
-	defer serverCancel()
-	go func() {
-		srv.Start(serverCtx)
-	}()
-	time.Sleep(1 * time.Second)
-	jsonBody := []byte(`{sdasdadasdad""||";;;"}`)
-	bodyReader := bytes.NewReader(jsonBody)
-
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://localhost:%s?getter=key", serverPort), bodyReader)
-	req.Header.Set("X-Cipher", "password")
-
-	client := http.Client{
-		Timeout: 5 * time.Second,
+func TestSecretRestAPI_Get(t *testing.T) {
+	type mockInput struct {
+		key      string
+		password string
 	}
-	res, err := client.Do(req)
-	responseData, _ := ioutil.ReadAll(res.Body)
-	require.Contains(t, string(responseData), "invalid character")
-	require.Equal(t, http.StatusInternalServerError, res.StatusCode)
-	require.NoError(t, err)
-
+	type mockOutput struct {
+		result string
+		err    error
+	}
+	testCases := []struct {
+		name          string
+		mockInput     mockInput
+		mockOutput    mockOutput
+		expectedCode  int
+		expectedBody  string
+		expectedError error
+	}{
+		{
+			name: "successfully runs server",
+			mockInput: mockInput{
+				key:      "key",
+				password: "password",
+			},
+			mockOutput: mockOutput{
+				result: "value",
+				err:    nil,
+			},
+			expectedCode:  http.StatusOK,
+			expectedBody:  `{"value":"value"}`,
+			expectedError: nil,
+		},
+		{
+			name: "Returns error when fails to process mocked method",
+			mockInput: mockInput{
+				key:      "key",
+				password: "password",
+			},
+			mockOutput: mockOutput{
+				result: "",
+				err:    errors.New("error in mocked method"),
+			},
+			expectedCode: http.StatusNotFound,
+			expectedBody: `{"error":"error in mocked method"}
+`,
+			expectedError: nil,
+		},
+	}
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			log.Println(tt.name)
+			serverPort, err := CheckPort()
+			if err != nil {
+				require.FailNow(t, "could not get port to perform a test", err)
+				return
+			}
+			mockSecretService := newMockSecretService()
+			mockSecretService.On("ReadSecret", tt.mockInput.key, tt.mockInput.password).Return(tt.mockOutput.result, tt.mockOutput.err)
+			srv := NewSecretRestAPI(mockSecretService, serverPort)
+			defer mockSecretService.AssertExpectations(t)
+			serverCtx, serverCancel := context.WithCancel(context.Background())
+			defer serverCancel()
+			go func() {
+				srv.Start(serverCtx)
+			}()
+			time.Sleep(1 * time.Second)
+			req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("http://localhost:%s?getter=key", serverPort), nil)
+			req.Header.Set("X-Cipher", tt.mockInput.password)
+			client := http.Client{
+				Timeout: 5 * time.Second,
+			}
+			res, err := client.Do(req)
+			if tt.expectedError != nil {
+				require.EqualError(t, err, tt.expectedError.Error())
+			} else {
+				require.NoError(t, err)
+			}
+			responseData, _ := ioutil.ReadAll(res.Body)
+			require.Equal(t, tt.expectedBody, string(responseData))
+			require.Equal(t, tt.expectedCode, res.StatusCode)
+			log.Println("test case finalized" + tt.name)
+		})
+	}
 }
-func TestSecretRestAPI_Post_FailedToWriteData(t *testing.T) {
-	serverPort := strconv.Itoa(rand.Intn(20000-10000) + 10000)
-	mockSecretService := newMockSecretService()
-	mockSecretService.On("WriteSecret", "key", "value", "password").Return(errors.New("Some Error"))
-	srv := NewSecretRestAPI(mockSecretService, serverPort)
-	serverCtx, serverCancel := context.WithCancel(context.Background())
-	defer serverCancel()
-	go func() {
-		srv.Start(serverCtx)
-	}()
-	time.Sleep(1 * time.Second)
-	jsonBody := []byte(`{"getter" : "key", "value" : "value"}`)
-	bodyReader := bytes.NewReader(jsonBody)
 
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://localhost:%s?getter=key", serverPort), bodyReader)
-	req.Header.Set("X-Cipher", "password")
+func TestSecretRestAPI_Post(t *testing.T) {
 
-	client := http.Client{
-		Timeout: 5 * time.Second,
+	var testCases = []struct {
+		name          string
+		value         string
+		key           string
+		password      string
+		jBody         string
+		expectedCode  int
+		expectedBody  string
+		expectedError error
+		isServiceCall bool
+	}{
+
+		{
+			name:          "successfully operates on sent data",
+			value:         "value",
+			key:           "key",
+			password:      "password",
+			jBody:         `{"getter" : "key", "value" : "value"}`,
+			expectedCode:  http.StatusCreated,
+			expectedError: nil,
+			expectedBody:  "",
+			isServiceCall: true,
+		},
+		{
+			name:          "Returns error when fails to process corrupted json",
+			value:         "value",
+			key:           "key",
+			password:      "password",
+			jBody:         `{sdasdadasdad""||";;;"}`,
+			expectedCode:  http.StatusBadRequest,
+			expectedError: nil,
+			expectedBody:  "invalid character",
+			isServiceCall: false,
+		},
+		{
+			name:          "Returns error when fails to process mocked method",
+			value:         "value",
+			key:           "key",
+			password:      "password",
+			jBody:         `{"getter" : "key", "value" : "value"}`,
+			expectedCode:  http.StatusInternalServerError,
+			expectedError: errors.New("Error while performing write method"),
+			expectedBody: `{"error":"Error while performing write method"}
+`,
+			isServiceCall: true,
+		},
 	}
-	res, err := client.Do(req)
-	responseData, _ := ioutil.ReadAll(res.Body)
-	require.Equal(t, "Some Error\n", string(responseData))
-	require.Equal(t, http.StatusInternalServerError, res.StatusCode)
-	require.NoError(t, err)
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			log.Println(tt.name)
+			serverPort, err := CheckPort()
+			if err != nil {
+				require.FailNow(t, "could not get port to perform a test", err)
+				return
+			}
+			mockSecretService := newMockSecretService()
+			mockSecretService.On("WriteSecret", tt.key, tt.value, tt.password).Return(tt.expectedError)
 
+			srv := NewSecretRestAPI(mockSecretService, serverPort)
+			serverCtx, serverCancel := context.WithCancel(context.Background())
+			defer serverCancel()
+			go func() {
+				srv.Start(serverCtx)
+			}()
+			time.Sleep(1 * time.Second)
+			jsonBody := []byte(tt.jBody)
+			bodyReader := bytes.NewReader(jsonBody)
+
+			req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://localhost:%s?getter=%s", serverPort, tt.key), bodyReader)
+			req.Header.Set("X-Cipher", "password")
+
+			client := http.Client{
+				Timeout: 5 * time.Second,
+			}
+			res, err := client.Do(req)
+			responseData, _ := ioutil.ReadAll(res.Body)
+			require.Contains(t, string(responseData), tt.expectedBody)
+			require.Equal(t, tt.expectedCode, res.StatusCode)
+			require.NoError(t, err)
+			if tt.isServiceCall {
+				mockSecretService.AssertExpectations(t)
+			} else {
+				mockSecretService.AssertNotCalled(t, "WriteSecret")
+			}
+
+		})
+	}
 }
