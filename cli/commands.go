@@ -54,7 +54,7 @@ var set = &cobra.Command{
 		srv := service.New(storage.NewFsStorage(path),
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(rand.Reader)),
 			ciphering.NewAESEncoder(ciphering.NewRandomNonceProducer(cReader)))
-		if err := srv.WriteSecret(keys, value, cipherKey); err != nil {
+		if err := srv.WriteSecret(keys, &service.SecretServiceModel{Value: &value}, cipherKey); err != nil {
 			return err
 		}
 

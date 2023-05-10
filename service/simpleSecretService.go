@@ -10,24 +10,26 @@ type SimpleSecretService struct {
 	keyEncoder encoder
 }
 
-func (ss *SimpleSecretService) ReadSecret(key string, password string) (string, error) {
+func (ss *SimpleSecretService) ReadSecret(key string, password string) (*SecretServiceModel, error) {
 	codedKey, err := ss.keyEncoder.Encrypt(key, ciphering.PassToSecretKey(password))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	encryptedVal, err := ss.storage.Read(codedKey)
+	encryptedData, err := ss.storage.Read(codedKey)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	decryptedVal, err := ss.encoder.Decrypt(*encryptedVal.Value, ciphering.PassToSecretKey(password))
+	decryptedVal, err := ss.encoder.Decrypt(*encryptedData.Value, ciphering.PassToSecretKey(password))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return decryptedVal, nil
+	return &SecretServiceModel{
+		Value: &decryptedVal,
+	}, nil
 }
 
-func (ss *SimpleSecretService) WriteSecret(key string, value string, password string) error {
-	secretData, err := ss.encoder.Encrypt(value, ciphering.PassToSecretKey(password))
+func (ss *SimpleSecretService) WriteSecret(key string, model *SecretServiceModel, password string) error {
+	secretData, err := ss.encoder.Encrypt(*model.Value, ciphering.PassToSecretKey(password))
 	if err != nil {
 		return err
 	}

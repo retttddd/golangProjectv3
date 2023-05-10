@@ -99,7 +99,7 @@ func jsonWriter(err error, value string, errorFunc func(error)) string {
 func (sr *SecretRestAPI) handlerGet(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Query().Get("getter")
 	result, err := sr.ssService.ReadSecret(key, r.Header.Get("X-Cipher"))
-	resultMsgJson := jsonWriter(err, result, func(err2 error) {
+	resultMsgJson := jsonWriter(err, *result.Value, func(err2 error) {
 		http.Error(w, "error:"+err2.Error(), http.StatusInternalServerError)
 	})
 	if err != nil {
@@ -132,7 +132,7 @@ func (sr *SecretRestAPI) handlerPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = sr.ssService.WriteSecret(p.Getter, p.Value, r.Header.Get("X-Cipher"))
+	err = sr.ssService.WriteSecret(p.Getter, &service.SecretServiceModel{Value: &p.Value}, r.Header.Get("X-Cipher"))
 	if err != nil {
 		errorMsgJson := jsonWriter(err, "", func(err2 error) {
 			http.Error(w, "error:"+err2.Error(), http.StatusInternalServerError)
