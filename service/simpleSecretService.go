@@ -19,7 +19,7 @@ func (ss *SimpleSecretService) ReadSecret(key string, password string) (string, 
 	if err != nil {
 		return "", err
 	}
-	decryptedVal, err := ss.encoder.Decrypt(encryptedVal, ciphering.PassToSecretKey(password))
+	decryptedVal, err := ss.encoder.Decrypt(*encryptedVal.Value, ciphering.PassToSecretKey(password))
 	if err != nil {
 		return "", err
 	}
@@ -35,7 +35,7 @@ func (ss *SimpleSecretService) WriteSecret(key string, value string, password st
 	if err != nil {
 		return err
 	}
-	return ss.storage.Write(codedKey, secretData)
+	return ss.storage.Write(codedKey, &StorageModel{Value: &secretData})
 }
 
 func New(st storage, en encoder, er encoder) *SimpleSecretService {
