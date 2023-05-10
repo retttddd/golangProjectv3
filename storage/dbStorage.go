@@ -50,6 +50,9 @@ func (st dbStorage) Read(key string) (*service.StorageModel, error) {
 }
 
 func (st dbStorage) Write(key string, model *service.StorageModel) error {
+	if model == nil || model.Value == nil {
+		return errors.New("you did not pass any value")
+	}
 
 	_, err := st.db.Exec(`INSERT INTO secret_data (key_data,value_data) VALUES ($1,$2) ON CONFLICT (key_data) DO UPDATE SET value_data = $2`, key, *model.Value)
 	if err != nil {
