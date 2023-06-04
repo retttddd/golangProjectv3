@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"awesomeProject3/service"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -14,25 +15,25 @@ type dataBox struct {
 	Value string `json:"value"`
 }
 
-func (st fsStorage) Read(key string) (string, error) {
+func (st fsStorage) Read(key string) (*service.StorageModel, error) {
 	file, err := ioutil.ReadFile(st.path)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	data := make(map[string]dataBox)
 	err = json.Unmarshal(file, &data)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	val, ok := data[key]
 	if ok {
-		return val.Value, nil
+		return &service.StorageModel{Value: &val.Value}, nil
 	}
-	return "", errors.New("item was not found")
+	return nil, errors.New("item was not found")
 }
 
-func (st fsStorage) Write(key string, value string) error {
+func (st fsStorage) Write(key string, model *service.StorageModel) error {
 	err := checkFile(st.path)
 	if err != nil {
 		return err
@@ -50,7 +51,7 @@ func (st fsStorage) Write(key string, value string) error {
 		}
 	}
 
-	data[key] = dataBox{Value: value}
+	data[key] = dataBox{Value: *model.Value}
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		return err
